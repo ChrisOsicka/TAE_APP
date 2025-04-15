@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:taeapp/paginas/sesion.dart';
 
 void main() {
   runApp(const MyApp());
@@ -19,8 +20,18 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class Registro extends StatelessWidget {
+// Cambia StatelessWidget a StatefulWidget
+class Registro extends StatefulWidget {
   const Registro({super.key});
+
+  @override
+  State<Registro> createState() => _RegistroState();
+}
+
+// Estado de la pantalla de registro
+class _RegistroState extends State<Registro> {
+  final _formKey = GlobalKey<FormState>(); // Clave global para el formulario
+  String selectedUserType = "Alumno"; // Valor inicial del DropdownButton
 
   @override
   Widget build(BuildContext context) {
@@ -30,18 +41,17 @@ class Registro extends StatelessWidget {
       ),
       body: Form(
         key: _formKey,
-        child: cuerpo(),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: cuerpo(context), // Pasa el context al cuerpo
+        ),
       ),
     );
   }
-}
 
-final _formKey = GlobalKey<FormState>();
-
-Widget cuerpo() {
-  return Container(
-    padding: const EdgeInsets.only(bottom: 100),
-    child: Center(
+  // Cuerpo de la pantalla de registro
+  Widget cuerpo(BuildContext context) {
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
@@ -55,6 +65,12 @@ Widget cuerpo() {
           _buildTextField("Apellidos", validator: (value) {
             if (value == null || value.isEmpty) {
               return 'Por favor, ingresa tus apellidos';
+            }
+            return null;
+          }),
+          _buildTextField("Usuario", validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Por favor, ingresa un usuario';
             }
             return null;
           }),
@@ -86,62 +102,87 @@ Widget cuerpo() {
             return null;
           }),
           const SizedBox(height: 20),
-          registrar(),
+          // DropdownButton para seleccionar el tipo de usuario
+          DropdownButton<String>(
+            value: selectedUserType,
+            onChanged: (String? newValue) {
+              setState(() {
+                selectedUserType = newValue!;
+              });
+            },
+            items: <String>["Admin", "Instructor", "Alumno"]
+                .map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 20),
+          registrar(context), // Pasa el context al botón
         ],
       ),
-    ),
-  );
-}
+    );
+  }
 
-Widget registro() {
-  return Container(
-    padding: const EdgeInsets.only(bottom: 40),
-    child: const Text(
-      "Registro",
-      style: TextStyle(
-        color: Color.fromARGB(255, 4, 135, 242),
-        fontSize: 35.0,
-        fontWeight: FontWeight.bold,
+  // Título de la pantalla
+  Widget registro() {
+    return Container(
+      padding: const EdgeInsets.only(bottom: 40),
+      child: const Text(
+        "Registro",
+        style: TextStyle(
+          color: Color.fromARGB(255, 4, 135, 242),
+          fontSize: 35.0,
+          fontWeight: FontWeight.bold,
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
-Widget _buildTextField(String hintText, {bool isPassword = false, String? Function(String?)? validator}) {
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 5),
-    child: TextFormField(
-      obscureText: isPassword,
-      decoration: InputDecoration(
-        hintText: hintText,
-        fillColor: Colors.grey[200],
-        filled: true,
-        border: OutlineInputBorder(
+  // Método para construir un campo de texto
+  Widget _buildTextField(String hintText, {bool isPassword = false, String? Function(String?)? validator}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: TextFormField(
+        obscureText: isPassword,
+        decoration: InputDecoration(
+          hintText: hintText,
+          fillColor: Colors.grey[200],
+          filled: true,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        ),
+        validator: validator,
+      ),
+    );
+  }
+
+  // Botón para registrar
+  Widget registrar(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () {
+        if (_formKey.currentState!.validate()) {
+          // Si todos los campos son válidos, procede con el registro
+          print('Registro exitoso');
+          print('Tipo de usuario seleccionado: $selectedUserType');
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => Sesion()),
+          );
+        }
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color.fromARGB(255, 249, 71, 11),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10.0),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
       ),
-      validator: validator,
-    ),
-  );
-}
-
-Widget registrar() {
-  return ElevatedButton(
-    onPressed: () {
-      if (_formKey.currentState!.validate()) {
-        // Si todos los campos son válidos, procede con el registro
-        print('Registro exitoso');
-      }
-    },
-    style: ElevatedButton.styleFrom(
-      backgroundColor: const Color.fromARGB(255, 249, 71, 11),
-      foregroundColor: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10.0),
-      ),
-    ),
-    child: const Text("Registrar"),
-  );
+      child: const Text("Registrar"),
+    );
+  }
 }
