@@ -13,6 +13,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false, // Para quitar el banner de debug
       title: 'TAE - APP',
       initialRoute: '/login',
       routes: {

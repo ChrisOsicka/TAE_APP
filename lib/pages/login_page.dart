@@ -74,7 +74,7 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 20),
 
                   Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 50),
+                    margin: const EdgeInsets.symmetric(horizontal: 30),
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       border: Border.all(
