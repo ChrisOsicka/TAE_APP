@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 // Redireccion al registro de alumno maestro.
 import 'register_teacher_student.dart';
+// Redireccion al registro de admin maestro.
+import 'register_admin.dart';
 
 class TypeRegister extends StatelessWidget {
   const TypeRegister({super.key});
@@ -24,12 +26,18 @@ class TypeRegister extends StatelessWidget {
             border: Border.all(color: Color(0xffd3d3d3), width: 1.5),
             borderRadius: BorderRadius.circular(15),
             boxShadow: [
-            BoxShadow(
-              color: const Color.fromARGB(255, 178, 178, 178).withValues(), // Color de la sombra
-              blurRadius: 2, // Difuminado
-              offset: Offset(0, 4), // Dirección de la sombra
-            ),
-          ],
+              BoxShadow(
+                color:
+                    const Color.fromARGB(
+                      255,
+                      178,
+                      178,
+                      178,
+                    ).withValues(), // Color de la sombra
+                blurRadius: 2, // Difuminado
+                offset: Offset(0, 4), // Dirección de la sombra
+              ),
+            ],
           ),
           padding: EdgeInsets.all(20), // Espacio interno
           child: Column(
@@ -67,7 +75,15 @@ class TypeRegister extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => const RegisterAdmin(),
+                          ),
+                        );
+                      },
                       child: Text(
                         'Administrador',
                         style: TextStyle(
@@ -90,22 +106,23 @@ class TypeRegister extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                       onPressed: () {
-                          Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) =>
-                                              const RegisterTeacherStudent(),
-                                    ),
-                                  );
-                        },
-                      child: Text('Alumno / Instructor',
-                      style: TextStyle(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => const RegisterTeacherStudent(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'Alumno / Instructor',
+                        style: TextStyle(
                           color: const Color.fromARGB(255, 0, 0, 0),
                           fontWeight: FontWeight.bold,
                           fontSize: 20,
-                        ),),
+                        ),
+                      ),
                     ),
                   ],
                 ),
