@@ -7,7 +7,7 @@ te da acceso a componentes de diseño Material
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'home_page_admin.dart';
+import '../../admin/pages/home_page_admin.dart';
 
 /*
 No guarda datos, solo dice:
@@ -15,23 +15,23 @@ No guarda datos, solo dice:
 Flutter, créame uno usando esta clase:
  _LoginPageState”.
 */
-class RegisterTeacherStudent extends StatefulWidget {
-  const RegisterTeacherStudent({super.key});
+class RegisterAdmin extends StatefulWidget {
+  const RegisterAdmin({super.key});
   @override
-  State<RegisterTeacherStudent> createState() => _RegisterTeacherStudent();
+  State<RegisterAdmin> createState() => _RegisterAdmin();
 }
 
-class _RegisterTeacherStudent extends State<RegisterTeacherStudent> {
+class _RegisterAdmin extends State<RegisterAdmin> {
   // Sirve para poder hacer las validaciones
-  // Cuando creas un formulario con Form(...),
-  // necesitas una forma de acceder a su estado
+  // Cuando creas un formulario con Form(...), 
+  // necesitas una forma de acceder a su estado 
   // (para validar, guardar, etc). Esto se hace así:
   final _formKey = GlobalKey<FormState>();
   // Entonces puedes llamar a métodos como: _formKey.currentState!.validate()
   // Llama a todos los validator definidos en tus TextFormField.
   // -> Retorna true si todo está válido, o false si algún campo no cumple
   // En este caso lo usaremos para validar la contraseña.
-
+  
   bool _obscureText = true; // estado inicial: contraseña oculta
 
   @override
@@ -67,7 +67,7 @@ class _RegisterTeacherStudent extends State<RegisterTeacherStudent> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Registro.',
+                            'Registro Admin.',
                             style: TextStyle(
                               fontSize: 37,
                               fontWeight: FontWeight.bold,
@@ -282,6 +282,52 @@ class _RegisterTeacherStudent extends State<RegisterTeacherStudent> {
                         ),
 
                         const SizedBox(height: 30),
+
+                        //Número
+                        Container(
+                          /*
+                    Alínea mi texto a la izquierda 
+                    dentro del espacio disponible"
+                    "Y empuja ese texto un poco 
+                    hacia adentro con un padding"
+                    */
+                          alignment: Alignment.centerLeft,
+                          padding: const EdgeInsets.only(left: 30.0),
+                          child: Text(
+                            'Número de telefono',
+                            style: GoogleFonts.bebasNeue(
+                              fontSize: 20,
+                              color: const Color(0xFF344e41),
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Color(0xFFffffff),
+                              border: Border.all(
+                                color: Color.fromARGB(98, 52, 78, 65),
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Padding(
+                              padding: EdgeInsets.only(left: 20.0),
+                              child: TextFormField(
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  hintText: '+52',
+                                ),
+                                inputFormatters: [
+                                  LengthLimitingTextInputFormatter(10),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 30),
+
                         // Contraseña
                         SingleChildScrollView(
                           child: Form(
@@ -290,11 +336,11 @@ class _RegisterTeacherStudent extends State<RegisterTeacherStudent> {
                               children: [
                                 Container(
                                   /*
-                                    Alínea mi texto a la izquierda 
-                                    dentro del espacio disponible"
-                                    "Y empuja ese texto un poco 
-                                    hacia adentro con un padding"
-                                  */
+                                                Alínea mi texto a la izquierda 
+                                                dentro del espacio disponible"
+                                                "Y empuja ese texto un poco 
+                                                hacia adentro con un padding"
+                                                */
                                   alignment: Alignment.centerLeft,
                                   padding: const EdgeInsets.only(left: 30.0),
                                   child: Text(

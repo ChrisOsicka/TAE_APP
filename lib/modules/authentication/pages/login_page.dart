@@ -6,7 +6,7 @@ te da acceso a componentes de diseño Material
 */
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'home_page_admin.dart';
+import '../../admin/pages/home_page_admin.dart';
 import 'forgot_password_page.dart';
 import 'type_register.dart';
 
