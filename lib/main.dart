@@ -143,7 +143,7 @@ class _LicenciaScreenState extends State<LicenciaScreen> {
                     ),
                   ),
                   onPressed: () =>
-                      Navigator.pushNamed(context, '/next'),
+                      Navigator.pushNamed(context, '/next'),//Aqui digamos tambien utiliza ese metodo que hablaba para ir a la siguiente pantalla.
                   child: Text(
                     'Proceder',
                     style: TextStyle(
