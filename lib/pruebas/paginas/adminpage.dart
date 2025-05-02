@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:taeapp/pruebas/paginas/pagos.dart';
-import 'package:taeapp/pruebas/paginas/calendaro.dart';
-import 'package:taeapp/pruebas/paginas/grados.dart';
+import 'package:tae_app/pruebas/paginas/pagos.dart';
+import 'package:tae_app/pruebas/paginas/calendaro.dart';
+import 'package:tae_app/pruebas/paginas/grados.dart';
 
 
 void main() {

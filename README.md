@@ -1,4 +1,4 @@
-# taeapp
+# tae_app
 
 A new Flutter project.
 

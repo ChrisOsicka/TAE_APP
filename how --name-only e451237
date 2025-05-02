@@ -1,0 +1,17 @@
+* [33me451237[m[33m ([m[1;31morigin/feature/login[m[33m, [m[1;32mfeature/login[m[33m)[m organizacion de carpetas, manejo de erorres en el login y correccion de botones
+* [33m6b0e2cc[m Mensaje descriptivo de tus cambios
+* [33m5b66c0d[m Manejo de errores de usuario en los login y correciones de botones
+* [33m447944c[m Modificaciones al tipo de registro y creacion del formulario del registro
+* [33m41c5cdd[m Pantallita de registro ademas de quitar la etiqueta debug
+* [33m7f4a657[m Correcion del login para que sea responsivo con los dispositivos
+* [33m611dbeb[m creacion de la primera pestaña de login, incluye redirecciones a las otras secciones
+* [33mfd7de45[m[33m ([m[1;36mHEAD[m[33m, [m[1;31morigin/feature/licenses[m[33m, [m[1;32mfeature/licenses[m[33m)[m LA PANTALLA DE LICENCIAS YA DOCUMENTADO
+* [33mb6772bb[m ES PARA LAS LICENCIAS, solamente
+* [33m3ecf1b5[m[33m ([m[1;31morigin/master[m[33m)[m Cambios hasta el momento
+* [33mc2a18c2[m Proyecto Flutter
+* [33mb4f7ef4[m Proyecto Flutter
+* [33m8f310f8[m Delete README.md
+* [33m5d4ad20[m Delete TaeApp directory
+* [33m56ab1f9[m Update README.md
+* [33mbef8711[m Create README.md
+* [33m0fe8f28[m Proyecto APP

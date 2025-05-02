@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:taeapp/pruebas/paginas/adminpage.dart';
+import 'package:tae_app/pruebas/paginas/adminpage.dart';
 
 void main() {
   runApp(const MyApp());

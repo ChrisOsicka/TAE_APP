@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:taeapp/pruebas/paginas/sesion.dart';
+import 'package:tae_app/pruebas/paginas/sesion.dart';
 
 void main() {
   runApp(const MyApp());

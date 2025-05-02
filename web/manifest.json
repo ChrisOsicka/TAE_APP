@@ -1,6 +1,6 @@
 {
-    "name": "taeapp",
-    "short_name": "taeapp",
+    "name": "tae_app",
+    "short_name": "tae_app",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
