@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'Group Selection.dart';
+import 'group_selection.dart';
 import 'wallet_screen.dart';
 import 'profile_screen.dart';
 
