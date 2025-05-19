@@ -6,7 +6,7 @@ te da acceso a componentes de diseño Material
 */
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../admin/pages/home_page_admin.dart';
+import '../../admin/pages/branch_selection_tab.dart';
 import 'forgot_password_page.dart';
 import 'type_register.dart';
 
@@ -180,29 +180,31 @@ class _LoginPageState extends State<LoginPage> {
                         //sign in buttom
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 30),
-                          child: MouseRegion(
-                            cursor: SystemMouseCursors.click,
-                            child: Container(
-                              padding: EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                color: Color(0xff000000),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              // Es un widget que te permite detectar interacciones del usuario:
-                              child: GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) =>
-                                              const HomePageAdmin(),
-                                    ),
-                                  );
-                                },
+                          child: Material(
+                            // Widget Material para mejor feedback visual
+                            color: Colors.black, // Color de fondo del botón
+                            borderRadius: BorderRadius.circular(20),
+                            // está diseñado específicamente para áreas clickables Proporciona el efecto de onda (ripple) por defecto
+                            child: InkWell(
+                              // Reemplaza GestureDetector+Container por InkWell
+                              borderRadius: BorderRadius.circular(20),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => MainBranches(),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                padding: EdgeInsets.all(20),
+                                // width: double.infinity hace que el botón ocupe todo el ancho del Padding
+                                width:
+                                    double
+                                        .infinity, // Ocupa todo el ancho disponible
                                 child: Center(
                                   child: Text(
-                                    'Inicar Sesión',
+                                    'Iniciar Sesión',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
@@ -214,7 +216,6 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                         ),
-
                         const SizedBox(height: 20),
 
                         //password?
@@ -273,13 +274,11 @@ class _LoginPageState extends State<LoginPage> {
                       ElevatedButton(
                         onPressed: () {
                           Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) =>
-                                              const TypeRegister(),
-                                    ),
-                                  );
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const TypeRegister(),
+                            ),
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(
