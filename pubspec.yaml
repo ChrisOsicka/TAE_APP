@@ -30,6 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+
   intl: ^0.18.0  # Usa la última versión disponible
 
   google_fonts: 
@@ -38,6 +40,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   postgres: ^3.5.4
   table_calendar: ^3.0.9
+
+    
 
 
 dev_dependencies:
@@ -61,12 +65,16 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  fonts:
+    - family: Vollkorn
+      fonts:
+        - asset : assets/fonts/Vollkorn-Bold.ttf
 
   # To add assets to your application, add an assets section, like this:
   assets:
     #- images/a_dot_burr.jpeg
     #- images/a_dot_ham.jpeg
-    - assets/image/TAE - APP LOGIN.png
+    - assets/image/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:tae_app/modules/admin/pages/activities_section.dart';
+import 'package:tae_app/modules/admin/widgets/adaptive_branch_list.dart';
+import 'package:tae_app/modules/admin/widgets/custom_navigation_bar_admin.dart';
+import 'package:tae_app/modules/admin/widgets/notes_button.dart';
+import 'package:tae_app/modules/admin/widgets/search_bar.dart';
 import 'wallet_screen.dart';
 import 'profile_screen.dart';
 
@@ -16,10 +21,10 @@ class _BranchGroupsScreenState extends State<BranchGroupsScreen> {
   
   // Datos de ejemplo para grupos
   final List<Map<String, dynamic>> groups = [
-    {"name": "Grupo Avanzado", "beltType": "Negra", "schedule": "Lunes y Miércoles 18:00-20:00"},
-    {"name": "Grupo Intermedio", "beltType": "Azul", "schedule": "Martes y Jueves 17:00-19:00"},
-    {"name": "Grupo Principiantes", "beltType": "Blanca", "schedule": "Sábados 10:00-12:00"},
-    {"name": "Grupo Infantil", "beltType": "Amarilla", "schedule": "Viernes 16:00-18:00"},
+    {"name": "Otras Cintas", "beltType": "Blanca, Amarilla...", "schedule": "Lunes y Miércoles 6:00-8:00 Pm","alumns": "x participantes"},
+    {"name": "Cintas negras", "beltType": "Negra", "schedule": "Martes y Jueves 7:00-8:00 Pm","alumns": "x participantes"},
+    {"name": "Infantiles", "beltType": "Blanca, Amarilla...", "schedule": "Sábados 10:00-12:00 Am","alumns": "x participantes"},
+    {"name": "Otros Grupos", "beltType": "-", "schedule": "Viernes 4:00-6:00 Pm","alumns": "x participantes"},
   ];
 
   // Lista de pantallas/pestañas
@@ -46,24 +51,12 @@ class _BranchGroupsScreenState extends State<BranchGroupsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Barra de búsqueda
-            TextField(
-              decoration: InputDecoration(
 
-                hintText: 'Buscar grupo',
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.purple[50],
-                contentPadding: const EdgeInsets.symmetric(
-                  vertical: 0,
-                  horizontal: 20,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(25),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
+            // Barra de búsqueda
+            BarSearch(),
+
+
+
             const SizedBox(height: 10),
 
             // Botón Agregar Grupo
@@ -91,6 +84,7 @@ class _BranchGroupsScreenState extends State<BranchGroupsScreen> {
 
             // Lista de grupos
             ...groups.map((group) => _buildGroupCard(group)).toList(),
+
           ],
         ),
       ),
@@ -104,7 +98,17 @@ class _BranchGroupsScreenState extends State<BranchGroupsScreen> {
         
         return Center(
           child: InkWell(
-            onTap: () {},
+            onTap: () { // 👇 Aquí navegas a la nueva pantalla
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ActivitiesSection(
+                  groupName: group['name'], // 👈 Pasas el nombre aquí
+                ),
+              ),
+            );
+              
+            },
             child: Container(
               width: maxCardWidth,
               height: 170,
@@ -121,6 +125,7 @@ class _BranchGroupsScreenState extends State<BranchGroupsScreen> {
                   ),
                 ],
               ),
+              
               child: Row(
                 children: [
                   Expanded(
@@ -137,7 +142,7 @@ class _BranchGroupsScreenState extends State<BranchGroupsScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Tipo de cinta: ${group["beltType"]}',
+                          'Tipo de cinta(s): ${group["beltType"]}',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w500,
@@ -151,6 +156,13 @@ class _BranchGroupsScreenState extends State<BranchGroupsScreen> {
                             color: Colors.grey[500],
                           ),
                         ),
+                        Text(
+                          'Alumnos: ${group["alumns"]}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.grey[500],
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -159,13 +171,19 @@ class _BranchGroupsScreenState extends State<BranchGroupsScreen> {
                     size: 50,
                     color: Color.fromARGB(255, 57, 56, 56),
                   ),
+                
                 ],
               ),
+
+
+              
             ),
           ),
         );
       },
     );
+  
+  
   }
 
   void _onItemTapped(int index) {
@@ -192,21 +210,16 @@ class _BranchGroupsScreenState extends State<BranchGroupsScreen> {
         iconTheme: IconThemeData(color: Colors.white),
       ),
       body: _screens[_selectedIndex],
-      floatingActionButton: _selectedIndex == 0
-          ? FloatingActionButton(
-              onPressed: () => print("Editar grupos"),
-              child: const Icon(Icons.edit),
-            )
-          : null,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
+      
+      // Botón para crear una nota.
+      floatingActionButton: NotesButton(),
+
+     bottomNavigationBar: CustomNavigationBarAdmin(
+        //(qué pantalla está activa).
+        currentIndex: _selectedIndex, 
+        // (qué hacer cuando el usuario cambia de pestaña).
         onTap: _onItemTapped,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
-          BottomNavigationBarItem(icon: Icon(Icons.wallet), label: 'Cartera'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
-        ],
-      ),
+        ),
     );
   }
 }
