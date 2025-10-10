@@ -16,9 +16,7 @@ class StudentsSectionScreen extends StatefulWidget {
 }
 
 class _StudentsSectionScreenState extends State<StudentsSectionScreen> {
-
-
-    int _selectedIndex = 0;
+  int _selectedIndex = 0;
 
   Map<String, List<Map<String, dynamic>>> _beltStudents = {
     'Cintas Blancas': [
@@ -33,7 +31,6 @@ class _StudentsSectionScreenState extends State<StudentsSectionScreen> {
       {'name': 'Luis', 'image': 'assets/image/Logo.png'},
       {'name': 'Luis', 'image': 'assets/image/Logo.png'},
       {'name': 'Luis', 'image': 'assets/image/Logo.png'},
-      
     ],
     'Cintas Naranjas': [
       {'name': 'Paulo', 'image': 'assets/image/Logo.png'},
@@ -47,23 +44,9 @@ class _StudentsSectionScreenState extends State<StudentsSectionScreen> {
     ],
   };
 
-    // Lista de pantallas/pestañas
-  late final List<Widget> _screens;
-
-    @override
-      void initState() {
+  @override
+  void initState() {
     super.initState();
-    _screens = [
-      //StudentsSectionScreen(), // Tu pantalla de grupos actual
-      WalletScreen(),        // Pantalla de cartera
-      ProfileScreen(),       // Pantalla de perfil
-    ];
-  }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
   }
 
   @override
@@ -87,31 +70,69 @@ class _StudentsSectionScreenState extends State<StudentsSectionScreen> {
 
                 const SizedBox(height: 20),
 
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () {
+                      // Tu lógica del modal aquí
+                      //showDialog(...);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(
+                            Icons.delete,
+                            color: Color.fromARGB(255, 184, 10, 10),
+                            size: 18,
+                          ),
+                          SizedBox(width: 5),
+                          Text(
+                            'Borrar Alumnos Seleccionados',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Color.fromARGB(255, 184, 10, 10),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
                 // Lista de grupos por cinta
-                ..._beltStudents.entries.map((entry) => BeltGroup(
-                  beltName: entry.key,
-                  students: entry.value,
-                  onSeeMore: () {
-                    print("Ver más de ${entry.key}");
-                  },
-                )).toList(),
+                ..._beltStudents.entries
+                    .map(
+                      (entry) => BeltGroup(
+                        beltName: entry.key,
+                        students: entry.value,
+                        onSeeMore: () {
+                          print("Ver más de ${entry.key}");
+                        },
+                      ),
+                    )
+                    .toList(),
               ],
             ),
           ),
         ),
       ),
-      bottomNavigationBar: CustomNavigationBarAdmin(
-        //(qué pantalla está activa).
-        currentIndex: _selectedIndex, 
-        // (qué hacer cuando el usuario cambia de pestaña).
-        onTap: _onItemTapped,
-        ),
+
       floatingActionButton: NotesButton(),
     );
   }
 }
-
-
 
 class StudentCard extends StatelessWidget {
   final String name;
@@ -138,7 +159,7 @@ class StudentCard extends StatelessWidget {
           // Foto circular
           Container(
             width: 70,
-            height: 70,
+            height: 50,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               image: DecorationImage(
@@ -166,7 +187,10 @@ class StudentCard extends StatelessWidget {
                 value: isSelected,
                 onChanged: (value) => onTap(),
                 activeColor: Colors.blue,
-                side: BorderSide(width: 2, color: Colors.grey[400]!), // Borde más claro
+                side: BorderSide(
+                  width: 2,
+                  color: Colors.grey[400]!,
+                ), // Borde más claro
               ),
             ),
           ),
@@ -176,9 +200,7 @@ class StudentCard extends StatelessWidget {
   }
 }
 
-
-class BeltGroup extends StatelessWidget {
-  
+class BeltGroup extends StatefulWidget {
   final String beltName;
   final List<Map<String, dynamic>> students;
   final VoidCallback onSeeMore; // Opcional: abrir otra pantalla
@@ -191,6 +213,29 @@ class BeltGroup extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<BeltGroup> createState() => _BeltGroupState();
+}
+
+class _BeltGroupState extends State<BeltGroup> {
+
+  // 👇 Estado: conjunto de alumnos seleccionados (usamos el nombre como identificador)
+  // Mejor usa un 'id' si lo tienes, pero si no, el nombre sirve temporalmente
+  final Set<String> _selectedStudents = {};
+ void _toggleSelection(String studentName) {
+  
+    setState(() {
+      if (_selectedStudents.contains(studentName)) {
+        _selectedStudents.remove(studentName);
+      } else {
+        _selectedStudents.add(studentName);
+      }
+    });
+    // Opcional: imprimir para depurar
+    print("Seleccionados: $_selectedStudents");
+  }
+
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,17 +245,17 @@ class BeltGroup extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
             Text(
-              beltName,
+              widget.beltName,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
               ),
             ),
-            if (onSeeMore != null)
+            if (widget.onSeeMore != null)
               IconButton(
                 icon: const Icon(Icons.arrow_forward, size: 26),
-                onPressed: onSeeMore,
+                onPressed: widget.onSeeMore,
               ),
           ],
         ),
@@ -218,24 +263,23 @@ class BeltGroup extends StatelessWidget {
 
         // Grid de alumnos
         SizedBox(
-          height: 120,
+                   height: 120,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-                shrinkWrap: true, // ← ¡Este es el truco!
-
-            itemCount: students.length,
+            shrinkWrap: true,
+            itemCount: widget.students.length,
             itemBuilder: (context, index) {
-              final student = students[index];
+              final student = widget.students[index];
+              final String name = student['name'];
+              final bool isSelected = _selectedStudents.contains(name);
+
               return Padding(
-                padding: EdgeInsets.only(right: 12),
+                padding: const EdgeInsets.only(right: 12),
                 child: StudentCard(
-                  name: student['name'],
+                  name: name,
                   image: student['image'],
-                  isSelected: false, // ← Por ahora fijo, puedes hacerlo dinámico
-                  onTap: () {
-                    // Aquí puedes manejar la selección
-                    print("Seleccionado: ${student['name']}");
-                  },
+                  isSelected: isSelected,
+                  onTap: () => _toggleSelection(name),
                 ),
               );
             },
