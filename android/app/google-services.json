@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "441308839671",
+    "project_id": "taeapp08",
+    "storage_bucket": "taeapp08.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:441308839671:android:3d9dd05b0a921070c1ddf2",
+        "android_client_info": {
+          "package_name": "com.example.tae_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC_xYt1BXlbzMZ0-QRry0xM3eVtFf0XrdU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

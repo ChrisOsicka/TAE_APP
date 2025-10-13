@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
 import 'modules/authentication/pages/login_page.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart'; // Tu archivo generado por flutterfire configure
 
-void main() {
+void main() async{
+  // 1. Esto debe ir SIEMPRE primero antes de cualquier llamada de Firebase.
+  WidgetsFlutterBinding.ensureInitialized(); 
+
+  // 2. Inicialización de Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 

@@ -40,6 +40,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   postgres: ^3.5.4
   table_calendar: ^3.0.9
+  firebase_core: ^4.1.1
+  firebase_auth: ^6.1.0
+  cloud_firestore: ^6.0.2
 
     
 
