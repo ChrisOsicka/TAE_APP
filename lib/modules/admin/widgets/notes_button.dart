@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tae_app/modules/admin/pages/notes/notes_students.dart';
 
   // Botón flotante
       /*
@@ -15,8 +16,17 @@ class NotesButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return FloatingActionButton(
       // Aun no tiene funcionalidad por que el OnPressed esta vacio
-      onPressed: () {},
+      onPressed: () {
+         Navigator.push(
+          context, 
+          MaterialPageRoute(
+          builder: (context) => NotasAlumnoScreen(),
+          ),
+        );
+      },
       child: Icon(Icons.edit),
+      
+
     );
   }
 }
