@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tae_app/modules/admin/widgets/adaptive_branch_list.dart';
+import 'package:tae_app/modules/admin/widgets/add_dialog.dart';
 import 'package:tae_app/modules/admin/widgets/branch_card.dart';
 import 'package:tae_app/modules/admin/widgets/branch_list_view.dart';
 import 'package:tae_app/modules/admin/widgets/custom_navigation_bar_admin.dart';
@@ -63,7 +64,7 @@ class _MainBranchesState extends State<MainBranches> {
     //HomeScreen(),
     BranchesScreen(), // temporal, cambia según lo que queramos hacer para "recargar" la pagina
     WalletScreen(),
-    ProfileScreen(),
+    ProfileScreen(fullName: 'Josepe', email: 'Josepe13186', phone: '34234234', role: 'Administrador', imageUrl: '',),
   ];
 
   // Método que se llama al tocar un ícono
@@ -95,27 +96,38 @@ class _MainBranchesState extends State<MainBranches> {
   }
 }
 
-class BranchesScreen extends StatelessWidget {
-  // Lista de mapas List<Map<String, dynamic> ->
-    // - List: es una lista, como un conjunto ordenado de elementos.
-    // - Map<String, dynamic>: es un mapa o diccionario. Tiene:
-    //    - claves (keys): "name", "classes", "participants"
-    //    - valores (values): "Sucursal A", 4, 70
-  // final en Dart: Cuando declaras una variable como final, no puedes reasignarla, o sea:
-  // Puedes modificar el contenido de la lista, pero no puedes asignar una nueva lista a esa variable.
-  // final List<Map<String, dynamic>> branches = [...];
-  // No puedes cambiar todo branches por otra lista nueva.
-  // Sí puedes agregar, quitar o cambiar elementos dentro de la lista.
+class BranchesScreen extends StatefulWidget {
 
+
+  @override
+  State<BranchesScreen> createState() => _BranchesScreenState();
+}
+
+class _BranchesScreenState extends State<BranchesScreen> {
+
+  // Lista de mapas List<Map<String, dynamic> ->
   final List<Map<String, dynamic>> branches = [
     {"name": "Centro Sur", "classes": 4, "participants": 70},
     {"name": "Tlacote", "classes": 5, "participants": 150},
     {"name": "Juriquilla", "classes": 3, "participants": 65},
   ];
 
+// Esta funcion es para mandar llamar el modal desde la clase AddDialog
+void _openAddBranchDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (context) => AddDialog(
+      onSave: (branch) {
+        setState(() {
+          branches.add(branch);
+        });
+        print("Sucursal agregada: ${branch['name']} (${branch['classes']} clases)");
+      },
+    ),
+  );
+}
+
   // @override significa que estás reescribiendo un método que ya existe en la clase padre (StatelessWidget).
-  // build(BuildContext context) es el método que crea lo que se va a mostrar en pantalla
-  // Todo lo que retorne el build es lo que verá el usuario cuando abra esa pantalla .
   @override
   Widget build(BuildContext context) {
     // Scaffold — La base visual de la pantalla
@@ -162,10 +174,8 @@ class BranchesScreen extends StatelessWidget {
                   // Hace que un widget sea "tocable" (con efecto de onda).
                   // onTap: función que se ejecuta al tocarlo. En este caso, imprime en consola.
                   child: InkWell(
-                    onTap: () {
-                      // Acción al hacer clic
-                      print("Agregar Sucursal clickeado");
-                    },
+                    onTap: () => _openAddBranchDialog(context),
+
                     // Padding dentro del botón
                     // Da espacio alrededor del texto e ícono.
                     child: Padding(

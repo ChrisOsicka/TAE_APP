@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tae_app/modules/admin/pages/activities_section.dart';
 import 'package:tae_app/modules/admin/widgets/adaptive_branch_list.dart';
+import 'package:tae_app/modules/admin/widgets/add_group_dialog.dart';
 import 'package:tae_app/modules/admin/widgets/custom_navigation_bar_admin.dart';
 import 'package:tae_app/modules/admin/widgets/notes_button.dart';
 import 'package:tae_app/modules/admin/widgets/search_bar.dart';
@@ -40,8 +41,23 @@ class _BranchGroupsScreenState extends State<BranchGroupsScreen> {
     _screens = [
       _buildGroupsContent(), // Tu pantalla de grupos actual
       WalletScreen(),        // Pantalla de cartera
-      ProfileScreen(),       // Pantalla de perfil
+      ProfileScreen(fullName: 'Josepe', email: 'Josepe13186', phone: '34234234', role: 'Administrador', imageUrl: '',),       // Pantalla de perfil
     ];
+  }
+
+    // Esta funcion es para mandar llamar el modal desde la clase AddDialog
+  void _openAddGroupDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AddGroupDialog(
+        onSave: (branch) {
+          setState(() {
+            groups.add(branch);
+          });
+          print("Sucursal agregada: ${branch['name']} (${branch['classes']} clases)");
+        },
+      ),
+    );
   }
 
   Widget _buildGroupsContent() {
@@ -65,7 +81,8 @@ class _BranchGroupsScreenState extends State<BranchGroupsScreen> {
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: () => print("Agregar Grupo"),
+                  onTap: () => _openAddGroupDialog(context),
+
                   child: const Padding(
                     padding: EdgeInsets.all(8.0),
                     child: Row(
@@ -186,6 +203,21 @@ class _BranchGroupsScreenState extends State<BranchGroupsScreen> {
   
   }
 
+
+  Widget _getCurrentScreen() {
+    switch (_selectedIndex) {
+      case 0:
+        return _buildGroupsContent(); // 🔹 se reconstruye cada vez
+      case 1:
+        return WalletScreen();
+      case 2:
+        return     ProfileScreen(fullName: 'Josepe', email: 'Josepe13186', phone: '34234234', role: 'Administrador', imageUrl: '',)
+;
+      default:
+        return _buildGroupsContent();
+    }
+  }
+  
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -209,7 +241,7 @@ class _BranchGroupsScreenState extends State<BranchGroupsScreen> {
         //title: Text('Volver', style: TextStyle(color: Colors.white)),
         iconTheme: IconThemeData(color: Colors.white),
       ),
-      body: _screens[_selectedIndex],
+      body: _getCurrentScreen(),
       
       // Botón para crear una nota.
       floatingActionButton: NotesButton(),

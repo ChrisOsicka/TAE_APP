@@ -29,9 +29,9 @@ class _ActivitiesSectionState extends State<ActivitiesSection> {
     //HomeScreen(),
     ActivitiesSectionScreen(
       groupName: widget.groupName,
-    ), // 👈 Lo pasamos a la pantalla interna), // temporal, cambia según lo que queramos hacer para "recargar" la pagina
+    ), //  Lo pasamos a la pantalla interna), // temporal, cambia según lo que queramos hacer para "recargar" la pagina
     WalletScreen(),
-    ProfileScreen(),
+    ProfileScreen(fullName: 'Josepe', email: 'Josepe13186', phone: '34234234', role: 'Administrador', imageUrl: '',),
   ];
 
   // Método que se llama al tocar un ícono
@@ -244,7 +244,7 @@ class _ActivitiesSectionScreenState extends State<ActivitiesSectionScreen> {
 
 
 
-  // 👈 Recibe el nombre
+  //  Recibe el nombre
   final List<Map<String, dynamic>> branches = [
     {"name": "Centro Sur", "classes": 4, "participants": 70},
     {"name": "Tlacote", "classes": 5, "participants": 150},
