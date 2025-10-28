@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tae_app/modules/admin/pages/activity_detail_screen.dart';
 
 class ActivitiesCard extends StatelessWidget {
   final List<Map<String, dynamic>> groups;
@@ -243,11 +244,19 @@ class ActivityCard extends StatelessWidget {
                   },
                 ),
                 IconButton(
-                  icon: Icon(Icons.arrow_forward_ios, size: 16),
-                  onPressed :() {
-                    // Acción de configuración
-                  },
-                )
+  icon: const Icon(Icons.arrow_forward_ios, size: 16),
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ActivityDetailScreen(
+          activityName: group['name'],
+          exercises: List<String>.from(group['exercises']),
+        ),
+      ),
+    );
+  },
+)
               ],
             ),
           ],

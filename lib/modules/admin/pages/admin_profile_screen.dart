@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class ProfileScreen extends StatelessWidget {
+class AdminProfileScreen extends StatelessWidget {
   final String fullName;
   final String email;
   final String phone;
   final String role;
   final String imageUrl;
 
-  const ProfileScreen({
+  const AdminProfileScreen({
     Key? key,
     required this.fullName,
     required this.email,
@@ -19,13 +19,11 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color.fromARGB(255, 245, 243, 243),
-
-      //appBar: AppBar(
-        //title: const Text('Perfil del Administrador'),
-        //centerTitle: true,
-        //backgroundColor: Colors.blueAccent,
-      //),
+      appBar: AppBar(
+        title: const Text('Perfil del Administrador'),
+        centerTitle: true,
+        backgroundColor: Colors.blueAccent,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -59,7 +57,6 @@ class ProfileScreen extends StatelessWidget {
 
             // Información adicional
             Card(
-              color: const Color.fromARGB(255, 255, 255, 255),
               elevation: 2,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -67,7 +64,6 @@ class ProfileScreen extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
                 child: Column(
-                  
                   children: [
                     ListTile(
                       leading: const Icon(Icons.email),
@@ -80,7 +76,6 @@ class ProfileScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              
             ),
             const SizedBox(height: 30),
 
@@ -91,8 +86,7 @@ class ProfileScreen extends StatelessWidget {
                 icon: const Icon(Icons.logout),
                 label: const Text('Cerrar Sesión'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 199, 0, 0),
-                  foregroundColor: const Color.fromARGB(255, 255, 255, 255),
+                  backgroundColor: Colors.redAccent,
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   textStyle: const TextStyle(fontSize: 18),
                   shape: RoundedRectangleBorder(
