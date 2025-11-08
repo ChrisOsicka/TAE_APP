@@ -71,20 +71,29 @@ class _LoginPageState extends State<LoginPage> {
         
         // C. NAVEGACIÓN: Redirigir según el rol
         if (mounted) {
-          Widget nextPage;
-          
-          if (userType == 'admin') {
-            nextPage = MainBranches(); // Destino para Admin (asumo MainBranches)
-          } else {
-            // Reemplaza esto con tu página principal del alumno
-            //nextPage = const HomePageAlumno(); 
-          }
-          
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => MainBranches()),
-          );
-        }
+  Widget nextPage;
+  
+  // 1. LÓGICA DE DECISIÓN: Asignar la página correcta
+  if (userType == 'admin') {
+    // Si es administrador, va a la pantalla principal de pestañas (MainBranches)
+    nextPage = MainBranches(); 
+  } else {
+    // Si no es admin (es alumno u otro rol), va a la página del alumno
+    // Asumiendo que esta clase existe:
+    // next_page = const HomePageAlumno(); 
+
+    // 🚨 Como no tenemos la página del alumno, usaremos MainBranches temporalmente
+    // O si quieres que falle si no es admin, puedes lanzar un error o ir al login.
+    nextPage = MainBranches(); // Reemplázalo con HomePageAlumno() cuando esté lista.
+  }
+  
+  // 2. EJECUTAR NAVEGACIÓN REEMPLAZADA con la variable nextPage
+  // Usamos pushReplacement para que el Login se elimine de la pila de navegación.
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(builder: (context) => nextPage), // << ¡USAR nextPage AQUÍ!
+  );
+}
       } else {
         // Si el usuario existe en Auth pero no en Firestore
         await FirebaseAuth.instance.signOut(); // Cierra la sesión

@@ -9,6 +9,7 @@ import 'package:tae_app/modules/admin/widgets/search_bar.dart';
 import 'group_selection.dart';
 import 'wallet_screen.dart';
 import 'profile_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Branches Se traduce a sucursales
 
@@ -105,27 +106,96 @@ class BranchesScreen extends StatefulWidget {
 
 class _BranchesScreenState extends State<BranchesScreen> {
 
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  /*
   // Lista de mapas List<Map<String, dynamic> ->
   final List<Map<String, dynamic>> branches = [
     {"name": "Centro Sur", "classes": 4, "participants": 70},
     {"name": "Tlacote", "classes": 5, "participants": 150},
     {"name": "Juriquilla", "classes": 3, "participants": 65},
   ];
+  */
+
+  // Variable para el stream de sucursales
+  Stream<QuerySnapshot>? _branchesStream;
+
+  @override
+  void initState() {
+    super.initState();
+    // 1. Inicializar el stream para TODAS las sucursales
+    _branchesStream = _db
+        .collection('sucursales')
+        .orderBy('name', descending: false) // Opcional: ordenar por nombre
+        .snapshots();
+
+        
+  }
 
 // Esta funcion es para mandar llamar el modal desde la clase AddDialog
 void _openAddBranchDialog(BuildContext context) {
   showDialog(
     context: context,
-    builder: (context) => AddDialog(
-      onSave: (branch) {
-        setState(() {
-          branches.add(branch);
-        });
-        print("Sucursal agregada: ${branch['name']} (${branch['classes']} clases)");
+    builder: (dialogContext) => AddDialog(
+      onSave: (newBranchData) async {
+        Navigator.of(dialogContext).pop(); // Cierra el diálogo correctamente
+
+        final String branchName = newBranchData['name'];
+
+        try {
+          // Crear la nueva sucursal
+          final branchToSave = {
+            'name': newBranchData['name'],
+            'classes': newBranchData['classes'],
+            'participants': newBranchData['participants'],
+            'fecha_creacion': FieldValue.serverTimestamp(),
+          };
+
+          // Guardar en Firebase
+          await _db.collection('sucursales').add(branchToSave);
+
+          if (!context.mounted) return;
+
+          // Mostrar mensaje de éxito
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Sucursal "$branchName" creada exitosamente'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+
+          // Esperar a que el frame termine antes de navegar
+          Future.delayed(const Duration(milliseconds: 300), () {
+            if (context.mounted) {
+              Navigator.of(context).push(
+                PageRouteBuilder(
+                  pageBuilder: (_, __, ___) => BranchGroupsScreen(branchName: branchName),
+                  transitionsBuilder: (_, animation, __, child) {
+                    return FadeTransition(opacity: animation, child: child);
+                  },
+                  transitionDuration: const Duration(milliseconds: 400),
+                ),
+              );
+            }
+          });
+        } catch (e) {
+          print("Error al guardar sucursal: $e");
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Error al crear la sucursal.'),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
       },
     ),
   );
 }
+
 
   // @override significa que estás reescribiendo un método que ya existe en la clase padre (StatelessWidget).
   @override
@@ -208,25 +278,60 @@ void _openAddBranchDialog(BuildContext context) {
               ),
 
               const SizedBox(height: 20),
-              // Lista de sucursales
-              // Mostrar una lista de tarjetas con detalles de cada sucursal
+            // === StreamBuilder: Escucha Sucursales en Firebase ===
+            
+            Expanded( // Usamos Expanded para que la lista ocupe el resto del espacio
+              child: StreamBuilder<QuerySnapshot>(
+                stream: _branchesStream,
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return const Center(child: Text('Error al cargar las sucursales.'));
+                  }
+                  
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  
+                  if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+                    // Mapeamos los documentos a una lista de Map<String, dynamic>
+                    final branchesFromFirebase = snapshot.data!.docs.map((doc) {
+                      final data = doc.data()! as Map<String, dynamic>;
+                      // Los datos se pasan directamente a tu widget AdaptiveBranchList
+                      return {
+                        // Asegúrate de que los tipos coincidan (classes y participants deben ser números)
+                        'name': data['name'] as String? ?? 'Sin Nombre',
+                        'classes': (data['classes'] as num?)?.toInt() ?? 0,
+                        'participants': (data['participants'] as num?)?.toInt() ?? 0,
+                      };
+                    }).toList();
+                    
+                    // Usamos tu widget AdaptiveBranchList con la data de Firebase
+                    return AdaptiveBranchList(
+                      branches: branchesFromFirebase, 
+                      icon: Icons.location_on_outlined,
+                      // Necesitas pasar el ID para navegar al siguiente nivel (Grupos)
+                      onTap: (branchName) {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => BranchGroupsScreen(branchName: branchName.toString()),
+                              ),
+                          );
+                      },
+                    );
+                  }
+                  
+                  return const Center(child: Text('No hay sucursales registradas.'));
+                },
+              ),
+            ),
+            
+            // =================================================
 
-              // EXPANDED -> Hace que su hijo ocupe todo el espacio disponible restante.
-              // Se usa dentro de una Column para decir:
-              //"esta parte puede crecer lo que quiera dentro del espacio disponible".
-              // Sin Expanded, la lista podría no mostrarse correctamente o desbordarse.
-              AdaptiveBranchList(branches: branches, icon: Icons.location_on_outlined,),
-            ],
-          ),
+          ],
         ),
       ),
-
-      // Botón flotante
-      /*
-      Un botón flotante (Floating Action Button o FAB) es 
-      un botón circular y elevado que aparece sobre 
-      la interfaz, normalmente en la esquina inferior derecha.
-       */
+    ),
       floatingActionButton: NotesButton(),
       
     );

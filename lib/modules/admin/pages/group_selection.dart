@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Importación de Firebase
 import 'package:tae_app/modules/admin/pages/activities_section.dart';
-import 'package:tae_app/modules/admin/widgets/adaptive_branch_list.dart';
 import 'package:tae_app/modules/admin/widgets/add_group_dialog.dart';
 import 'package:tae_app/modules/admin/widgets/custom_navigation_bar_admin.dart';
 import 'package:tae_app/modules/admin/widgets/notes_button.dart';
@@ -18,48 +18,79 @@ class BranchGroupsScreen extends StatefulWidget {
 }
 
 class _BranchGroupsScreenState extends State<BranchGroupsScreen> {
+  // Referencia a Firestore
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  
   int _selectedIndex = 0;
   
-  // Datos de ejemplo para grupos
-  final List<Map<String, dynamic>> groups = [
-    {"name": "Otras Cintas", "beltType": "Blanca, Amarilla...", "schedule": "Lunes y Miércoles 6:00-8:00 Pm","alumns": "x participantes"},
-    {"name": "Cintas negras", "beltType": "Negra", "schedule": "Martes y Jueves 7:00-8:00 Pm","alumns": "x participantes"},
-    {"name": "Infantiles", "beltType": "Blanca, Amarilla...", "schedule": "Sábados 10:00-12:00 Am","alumns": "x participantes"},
-    {"name": "Otros Grupos", "beltType": "-", "schedule": "Viernes 4:00-6:00 Pm","alumns": "x participantes"},
-  ];
+  // Stream que escucha los grupos de esta sucursal en Firebase
+  Stream<QuerySnapshot>? _groupsStream;
 
   // Lista de pantallas/pestañas
   late final List<Widget> _screens;
-  /*
-  _selectedIndex controla la pestaña activa.
-  _screens contiene todas las pantallas posibles.
-  initState() inicializa la lista de pantallas.
-*/
+
   @override
   void initState() {
     super.initState();
+    
+    // 1. Inicializamos el Stream para escuchar la colección 'grupos'
+    _groupsStream = _db
+        .collection('grupos')
+        // Filtramos solo por la sucursal actual (branchName)
+        .where('id_sucursal', isEqualTo: widget.branchName) 
+        .snapshots(); 
+        
     _screens = [
-      _buildGroupsContent(), // Tu pantalla de grupos actual
-      WalletScreen(),        // Pantalla de cartera
-      ProfileScreen(fullName: 'Josepe', email: 'Josepe13186', phone: '34234234', role: 'Administrador', imageUrl: '',),       // Pantalla de perfil
+      _buildGroupsContent(), // Pantalla de grupos (ahora dinámica)
+      WalletScreen(), 
+      ProfileScreen(fullName: 'Josepe', email: 'Josepe13186', phone: '34234234', role: 'Administrador', imageUrl: '',), 
     ];
   }
-
-    // Esta funcion es para mandar llamar el modal desde la clase AddDialog
+  
+  // =================================================================
+  // === LÓGICA DE FIREBASE: AGREGAR GRUPO ===
+  // =================================================================
   void _openAddGroupDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AddGroupDialog(
-        onSave: (branch) {
-          setState(() {
-            groups.add(branch);
-          });
-          print("Sucursal agregada: ${branch['name']} (${branch['classes']} clases)");
+        onSave: (newGroupData) async { // Hacemos la función async
+          
+          Navigator.of(context).pop(); // Cerramos el diálogo primero
+
+          try {
+            // Creamos el objeto exactamente como debe ir a Firestore, 
+            // incluyendo los campos 'tipo_cinta', 'horario' y 'id_sucursal'.
+            final groupToSave = {
+              'nombre_grupo': newGroupData['name'],
+              'tipo_cinta': newGroupData['beltType'], 
+              'horario': newGroupData['schedule'],   
+              'id_sucursal': widget.branchName, // Vinculado a la sucursal actual
+              'total_alumnos': 0, // Inicia en 0
+              'fecha_creacion': FieldValue.serverTimestamp(), 
+            };
+
+            // Guardar en Firestore. El StreamBuilder se encargará de refrescar la UI.
+            await _db.collection('grupos').add(groupToSave);
+            
+            ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Grupo ${newGroupData['name']} creado con éxito.')),
+            );
+
+          } catch (e) {
+            print("Error al guardar grupo en Firebase: $e");
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Error al crear grupo. Revisa conexión y permisos.')),
+            );
+          }
         },
       ),
     );
   }
 
+  // =================================================================
+  // === VISTA DE GRUPOS (DINÁMICA) ===
+  // =================================================================
   Widget _buildGroupsContent() {
     return SingleChildScrollView(
       child: Padding(
@@ -67,22 +98,16 @@ class _BranchGroupsScreenState extends State<BranchGroupsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
-            // Barra de búsqueda
             BarSearch(),
-
-
-
             const SizedBox(height: 10),
 
-            // Botón Agregar Grupo
+            // Botón Agregar Grupo (deja esto igual)
             Align(
               alignment: Alignment.centerRight,
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: () => _openAddGroupDialog(context),
-
                   child: const Padding(
                     padding: EdgeInsets.all(8.0),
                     child: Row(
@@ -99,14 +124,54 @@ class _BranchGroupsScreenState extends State<BranchGroupsScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Lista de grupos
-            ...groups.map((group) => _buildGroupCard(group)).toList(),
+            // === StreamBuilder: Escucha cambios en 'grupos' y actualiza la UI ===
+            StreamBuilder<QuerySnapshot>(
+              stream: _groupsStream,
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return const Text('¡Oh no! Tuvimos un error al cargar los grupos.');
+                }
+                
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                
+                // Si la conexión está activa y hay datos:
+                if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+                  
+                  return Column(
+                    children: snapshot.data!.docs.map((DocumentSnapshot document) {
+                      Map<String, dynamic> data = document.data()! as Map<String, dynamic>;
+                      
+                      // Mapeamos los datos de Firestore a un formato que _buildGroupCard entienda
+                      final groupData = {
+                        'name': data['nombre_grupo'] ?? 'Sin Nombre',
+                        'beltType': data['tipo_cinta'] ?? 'N/A',
+                        'schedule': data['horario'] ?? 'Sin horario',
+                        // El campo 'alumns' se genera aquí para la Card
+                        'alumns': (data['total_alumnos']?.toString() ?? 'x') + ' participantes', 
+                      };
+                      
+                      return _buildGroupCard(groupData);
+                    }).toList(),
+                  );
+                }
+                
+                // Si no hay grupos en Firebase (y ya quitamos los estáticos)
+                return Center(
+                  child: Text('Aún no hay grupos para ${widget.branchName}. ¡Agrega uno en Firebase o en el botón "Agregar Grupo"!'),
+                );
+              },
+            ),
+            // =========================================================
 
           ],
         ),
       ),
     );
   }
+
+  // El resto de tus métodos (que usan la lista 'group'):
 
   Widget _buildGroupCard(Map<String, dynamic> group) {
     return LayoutBuilder(
@@ -128,7 +193,6 @@ class _BranchGroupsScreenState extends State<BranchGroupsScreen> {
             },
             child: Container(
               width: maxCardWidth,
-              height: 170,
               margin: const EdgeInsets.only(bottom: 26),
               padding: const EdgeInsets.all(26),
               decoration: BoxDecoration(
@@ -188,31 +252,24 @@ class _BranchGroupsScreenState extends State<BranchGroupsScreen> {
                     size: 50,
                     color: Color.fromARGB(255, 57, 56, 56),
                   ),
-                
                 ],
               ),
-
-
-              
             ),
           ),
         );
       },
     );
-  
-  
   }
-
-
+  
+  // El resto de tus métodos de navegación permanecen iguales...
   Widget _getCurrentScreen() {
     switch (_selectedIndex) {
       case 0:
-        return _buildGroupsContent(); // 🔹 se reconstruye cada vez
+        return _buildGroupsContent(); 
       case 1:
         return WalletScreen();
       case 2:
-        return     ProfileScreen(fullName: 'Josepe', email: 'Josepe13186', phone: '34234234', role: 'Administrador', imageUrl: '',)
-;
+        return ProfileScreen(fullName: 'Josepe', email: 'Josepe13186', phone: '34234234', role: 'Administrador', imageUrl: '',);
       default:
         return _buildGroupsContent();
     }
@@ -228,30 +285,19 @@ class _BranchGroupsScreenState extends State<BranchGroupsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      //  Acceso Correcto a Parámetros
-      /*
-       Al convertir GroupsScreen en un método 
-       (_buildGroupsContent()), hereda automáticamente
-       el contexto y puede acceder a 
-       widget.branchName. 
-       */
       appBar: AppBar(
-        title: Text('Grupos en ${widget.branchName}',style: TextStyle(color: Colors.white)),
-         backgroundColor: Colors.black, // Fondo blanco
-        //title: Text('Volver', style: TextStyle(color: Colors.white)),
-        iconTheme: IconThemeData(color: Colors.white),
+        title: Text('Grupos en ${widget.branchName}',style: const TextStyle(color: Colors.white)),
+        backgroundColor: Colors.black, 
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: _getCurrentScreen(),
       
-      // Botón para crear una nota.
-      floatingActionButton: NotesButton(),
-
-     bottomNavigationBar: CustomNavigationBarAdmin(
-        //(qué pantalla está activa).
+      floatingActionButton: const NotesButton(), // Asegúrate de que NotesButton sea const si no usa variables de estado
+      
+      bottomNavigationBar: CustomNavigationBarAdmin(
         currentIndex: _selectedIndex, 
-        // (qué hacer cuando el usuario cambia de pestaña).
         onTap: _onItemTapped,
-        ),
+      ),
     );
   }
 }

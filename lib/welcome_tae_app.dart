@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tae_app/modules/admin/pages/branch_selection_tab.dart';
 import 'modules/authentication/pages/login_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart'; // Tu archivo generado por flutterfire configure
@@ -23,12 +24,21 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false, // Para quitar el banner de debug
       title: 'TAE - APP',
-      initialRoute: '/login',
-      routes: {'/login': (context) => const LoginPage()},
+      initialRoute: '/',
+      routes: {
+        // 🚨 1. Definir la ruta RAÍZ (/) para que muestre LoginPage 
+        '/': (context) => const LoginPage(),
+        
+        // 2. Definir /login (aunque ya lo cubre la ruta raíz)
+        '/login': (context) => const LoginPage(), 
+        
+        // Si tienes la página de sucursales, añádela también (ejemplo)
+        '/branches': (context) => MainBranches(), 
+      },
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      //home: const branch_slection_tab(),
     );
   }
 }
