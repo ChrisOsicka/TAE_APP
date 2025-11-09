@@ -1,0 +1,69 @@
+
+Flujo completo de AdaptiveBranchList, BranchListView y BranchCard
+
+AdaptiveBranchList
+🔹 Mide pantalla → decide ancho de tarjetas → llama a BranchListView.
+
+BranchListView
+🔹 Recorre la lista de sucursales → crea una tarjeta por cada sucursal → llama a BranchCard.
+
+BranchCard
+🔹 Dibuja el diseño de la tarjeta individual con textos e ícono → maneja la navegación al detalle.
+
+💡 Metáfora:
+
+AdaptiveBranchList → El arquitecto que decide cuánto espacio usar.
+
+BranchListView → El encargado de producción que organiza todas las tarjetas en fila.
+
+BranchCard → El diseñador que hace bonita cada tarjeta y le da interacción.
+
+
+==>  ¿Por qué es necesario pasarlo en cada clase?
+
+🔹 1. Widgets en Flutter son inmutables
+
+Cada widget es una descripción de la UI. No guarda datos “vivos”, sino que recibe parámetros (propiedades) que describen cómo debe pintarse.
+Por eso, si un widget hijo necesita mostrar algo (un texto, un ícono, un color, etc.), ese dato debe llegarle como parámetro.
+
+🔹 2. Ejemplo con tu caso
+
+Tienes dos clases:
+
+=> BranchListView
+
+    Se encarga de mostrar una lista de sucursales (branches).
+    Dentro de cada elemento, necesita un BranchCard para mostrar los datos de esa sucursal.
+    Como cada BranchCard debe mostrar también un ícono, BranchListView recibe el icon y se lo pasa al BranchCard.
+
+BranchCard(
+  branch: branch,
+  maxCardWidth: maxCardWidth,
+  icon: icon, // <- se lo pasa para que lo use
+);
+
+=> BranchCard
+
+Es la tarjeta individual de una sucursal.
+No sabe nada de la lista, solo cómo dibujar una sucursal.
+Para poder dibujar el ícono, necesita que alguien se lo proporcione (por eso recibe icon en su constructor).
+
+🔹 3. ¿Por qué no basta con declararlo en una sola clase?
+
+Imagina que el icon lo declaras solo en BranchListView.
+¿Cómo lo sabría el BranchCard si nunca se lo pasas? 🤔
+El BranchCard no tiene acceso directo a las variables del padre, porque en Flutter cada widget es independiente y aislado.
+
+Entonces, para que el dato viaje, debes pasarlo explícitamente:
+    Parent (BranchListView) → Child (BranchCard)
+
+🔹 4. Regla general
+
+    > Si un dato lo necesita un solo widget, déjalo dentro de ese widget.
+    > Si lo necesitan varios hijos, súbelo al padre y pásalo como parámetro a cada hijo.
+    > Si lo necesitan muchos widgets en distintas partes de la app, ahí conviene usar 
+    un manejador de estado (Provider, Riverpod, Bloc, etc.) para no estar pasando parámetros a mano en cada nivel.
+
+👉 Entonces, respondiendo a tu duda:
+Es necesario pasarlo en cada clase porque cada widget es independiente y solo sabe lo que recibe en su constructor. 
+Si un hijo necesita un valor, se lo tienes que dar explícitamente, salvo que uses un gestor de estado global.
