@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tae_app/modules/admin/pages/branch_selection_tab.dart';
 
-import '../../../welcome_tae_app.dart';
+import '../../../login_page.dart';
 
 void main() {
   runApp(LicenciaApp());
@@ -189,10 +189,8 @@ class _LicenciaScreenState extends State<LicenciaScreen> {
                   //AQUI VA A LA ANTERIOR PANTALLA
                     Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => MyApp()),
+                    MaterialPageRoute(builder: (context) => WelcomeTaeApp()),
                   );
-
-                 
                 },
                 child: Text(
                   'En otro momento',

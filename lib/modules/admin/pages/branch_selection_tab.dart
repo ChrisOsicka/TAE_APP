@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tae_app/modules/admin/widgets/adaptive_branch_list.dart';
 import 'package:tae_app/modules/admin/widgets/add_dialog.dart';
-import 'package:tae_app/modules/admin/widgets/branch_card.dart';
-import 'package:tae_app/modules/admin/widgets/branch_list_view.dart';
 import 'package:tae_app/modules/admin/widgets/custom_navigation_bar_admin.dart';
 import 'package:tae_app/modules/admin/widgets/notes_button.dart';
 import 'package:tae_app/modules/admin/widgets/search_bar.dart';

@@ -83,4 +83,5 @@ class DefaultFirebaseOptions {
     authDomain: 'taeapp08.firebaseapp.com',
     storageBucket: 'taeapp08.firebasestorage.app',
   );
+
 }

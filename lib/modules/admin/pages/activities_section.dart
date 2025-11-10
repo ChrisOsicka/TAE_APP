@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:tae_app/modules/admin/pages/branch_selection_tab.dart';
 import 'package:tae_app/modules/admin/pages/profile_screen.dart';
 import 'package:tae_app/modules/admin/pages/students_section.dart';
 import 'package:tae_app/modules/admin/pages/wallet_screen.dart';
 import 'package:tae_app/modules/admin/widgets/activities_card.dart';
-import 'package:tae_app/modules/admin/widgets/adaptive_branch_list.dart';
 import 'package:tae_app/modules/admin/widgets/custom_navigation_bar_admin.dart';
 import 'package:tae_app/modules/admin/widgets/notes_button.dart';
 import 'package:tae_app/modules/admin/widgets/search_bar.dart';
