@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Importación de Firebase
 import 'package:tae_app/modules/admin/pages/activities_section.dart';
-import 'package:tae_app/modules/admin/widgets/add_group_dialog.dart';
 import 'package:tae_app/modules/admin/widgets/custom_navigation_bar_admin.dart';
 import 'package:tae_app/modules/admin/widgets/notes_button.dart';
 import 'package:tae_app/modules/admin/widgets/search_bar.dart';
 import 'wallet_screen.dart';
 import 'profile_screen.dart';
+import 'package:tae_app/modules/admin/widgets/add_group_dialog.dart';
 
 class BranchGroupsScreen extends StatefulWidget {
   final String branchName;

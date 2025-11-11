@@ -16,7 +16,6 @@ import '../modules/authentication/pages/type_register.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Necesario antes de usar Firebase
-
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
