@@ -93,19 +93,25 @@ class _BranchesScreenState extends State<BranchesScreen> {
       context: context,
       builder: (context) => AddDialog(
         onSave: (newBranchData) async {
-          Navigator.of(context).pop(); // Cierra el diálogo
-
           final String branchName = newBranchData['name'];
+          
           try {
+            // Guardamos en Firebase
             await _db.collection('sucursales').add({
-              'name': newBranchData['name'],
+              'name': branchName,
               'classes': newBranchData['classes'] ?? 0,
               'participants': newBranchData['participants'] ?? 0,
               'fecha_creacion': FieldValue.serverTimestamp(),
             });
 
-            if (!context.mounted) return;
+            print("✅ Sucursal guardada: $branchName");
 
+            // Cerramos el diálogo DESPUÉS de guardar
+            if (!context.mounted) return;
+            Navigator.of(context).pop();
+
+            // Mostramos SnackBar DESPUÉS de cerrar el diálogo
+            if (!context.mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Sucursal "$branchName" creada exitosamente'),
@@ -115,27 +121,35 @@ class _BranchesScreenState extends State<BranchesScreen> {
               ),
             );
 
-            await Future.delayed(const Duration(milliseconds: 300));
+            // Esperamos un momento
+            await Future.delayed(const Duration(milliseconds: 400));
 
-            if (context.mounted) {
-              Navigator.of(context).push(
-                PageRouteBuilder(
-                  pageBuilder: (_, __, ___) =>
-                      BranchGroupsScreen(branchName: branchName),
-                  transitionsBuilder: (_, animation, __, child) =>
-                      FadeTransition(opacity: animation, child: child),
-                  transitionDuration: const Duration(milliseconds: 400),
+            // Navegamos a la pantalla de grupos
+            if (!context.mounted) return;
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => BranchGroupsScreen(
+                  branchName: branchName,
                 ),
-              );
-            }
+              ),
+            );
+            
           } catch (e) {
-            print("Error al guardar sucursal: $e");
+            print("❌ Error al guardar sucursal: $e");
+            
+            // Cerramos el diálogo primero
+            if (context.mounted) {
+              Navigator.of(context).pop();
+            }
+            
+            // Mostramos error DESPUÉS de cerrar
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Error al crear la sucursal.'),
+                SnackBar(
+                  content: Text('Error al crear la sucursal: ${e.toString()}'),
                   behavior: SnackBarBehavior.floating,
                   backgroundColor: Colors.red,
+                  duration: const Duration(seconds: 3),
                 ),
               );
             }
@@ -195,6 +209,7 @@ class _BranchesScreenState extends State<BranchesScreen> {
                   stream: _branchesStream,
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
+                      print("Error en StreamBuilder: ${snapshot.error}");
                       return const Center(
                           child: Text('Error al cargar las sucursales.'));
                     }

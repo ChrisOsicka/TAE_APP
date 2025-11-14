@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Importación de Firebase
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:tae_app/modules/admin/pages/activities_section.dart';
 import 'package:tae_app/modules/admin/widgets/custom_navigation_bar_admin.dart';
 import 'package:tae_app/modules/admin/widgets/notes_button.dart';
@@ -18,177 +18,195 @@ class BranchGroupsScreen extends StatefulWidget {
 }
 
 class _BranchGroupsScreenState extends State<BranchGroupsScreen> {
-  // Referencia a Firestore
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-  
   int _selectedIndex = 0;
-  
-  // Stream que escucha los grupos de esta sucursal en Firebase
-  Stream<QuerySnapshot>? _groupsStream;
-
-  // Lista de pantallas/pestañas
-  late final List<Widget> _screens;
+  late Stream<QuerySnapshot> _groupsStream;
 
   @override
   void initState() {
     super.initState();
-    
-    // 1. Inicializamos el Stream para escuchar la colección 'grupos'
+    // Inicializamos el Stream para escuchar la colección 'grupos'
     _groupsStream = _db
         .collection('grupos')
-        // Filtramos solo por la sucursal actual (branchName)
-        .where('id_sucursal', isEqualTo: widget.branchName) 
-        .snapshots(); 
-        
-    _screens = [
-      _buildGroupsContent(), // Pantalla de grupos (ahora dinámica)
-      WalletScreen(), 
-      ProfileScreen(fullName: 'Josepe', email: 'Josepe13186', phone: '34234234', role: 'Administrador', imageUrl: '',), 
-    ];
+        .where('id_sucursal', isEqualTo: widget.branchName)
+        .snapshots();
   }
-  
+
   // =================================================================
-  // === LÓGICA DE FIREBASE: AGREGAR GRUPO ===
+  // === AGREGAR GRUPO ===
   // =================================================================
-void _openAddGroupDialog(BuildContext context) async {
-  final newGroupData = await showDialog<Map<String, dynamic>>(
-    context: context,
-    builder: (context) => AddGroupDialog(onSave: (_) {}),
-  );
+  void _openAddGroupDialog(BuildContext context) async {
+    final newGroupData = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => AddGroupDialog(onSave: (_) {}),
+    );
 
-  if (newGroupData == null) return;
+    if (newGroupData == null) return;
 
-  try {
-    final groupToSave = {
-      'nombre_grupo': newGroupData['name'],
-      'tipo_cinta': newGroupData['beltType'],
-      'horario': newGroupData['schedule'],
-      'id_sucursal': widget.branchName,
-      'total_alumnos': 0,
-      'fecha_creacion': FieldValue.serverTimestamp(),
-    };
+    try {
+      final groupToSave = {
+        'nombre_grupo': newGroupData['name'],
+        'tipo_cinta': newGroupData['beltType'],
+        'horario': newGroupData['schedule'],
+        'id_sucursal': widget.branchName,
+        'total_alumnos': 0,
+        'fecha_creacion': FieldValue.serverTimestamp(),
+      };
 
-    await _db.collection('grupos').add(groupToSave);
+      await _db.collection('grupos').add(groupToSave);
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Grupo ${newGroupData['name']} creado con éxito.')),
-      );
-    }
-  } catch (e) {
-    print("Error al guardar grupo en Firebase: $e");
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content:
-                Text('Error al crear grupo. Revisa conexión y permisos.')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Grupo ${newGroupData['name']} creado con éxito.'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      print("Error al guardar grupo en Firebase: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error al crear grupo. Revisa conexión y permisos.'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
-}
 
   // =================================================================
   // === VISTA DE GRUPOS (DINÁMICA) ===
   // =================================================================
   Widget _buildGroupsContent() {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            BarSearch(),
-            const SizedBox(height: 10),
+    return SafeArea(
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              BarSearch(),
+              const SizedBox(height: 10),
 
-            // Botón Agregar Grupo (deja esto igual)
-            Align(
-              alignment: Alignment.centerRight,
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => _openAddGroupDialog(context),
-                  child: const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text('Agregar Grupo  '),
-                        SizedBox(width: 5),
-                        Icon(Icons.add_circle_outline),
-                      ],
+              // Botón Agregar Grupo
+              Align(
+                alignment: Alignment.centerRight,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _openAddGroupDialog(context),
+                    child: const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Agregar Grupo  ',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          SizedBox(width: 5),
+                          Icon(Icons.add_circle_outline),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            // === StreamBuilder: Escucha cambios en 'grupos' y actualiza la UI ===
-            StreamBuilder<QuerySnapshot>(
-  stream: _groupsStream,
-  builder: (context, snapshot) {
-    try {
-      if (snapshot.hasError) {
-        return const Text('¡Oh no! Tuvimos un error al cargar los grupos.');
-      }
+              // === StreamBuilder: Escucha cambios en 'grupos' ===
+              StreamBuilder<QuerySnapshot>(
+                stream: _groupsStream,
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    print("Error en StreamBuilder: ${snapshot.error}");
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Text(
+                          'Error al cargar los grupos. Por favor intenta de nuevo.',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    );
+                  }
 
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(child: CircularProgressIndicator());
-      }
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
 
-      if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-        return Column(
-          children: snapshot.data!.docs.map((DocumentSnapshot document) {
-            final data = document.data() as Map<String, dynamic>? ?? {};
-            final groupData = {
-              'name': data['nombre_grupo'] ?? 'Sin Nombre',
-              'beltType': data['tipo_cinta'] ?? 'N/A',
-              'schedule': data['horario'] ?? 'Sin horario',
-              'alumns': '${data['total_alumnos'] ?? 0} participantes',
-            };
-            return _buildGroupCard(groupData);
-          }).toList(),
-        );
-      }
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32.0),
+                        child: Text(
+                          'Aún no hay grupos para ${widget.branchName}.\n¡Agrega uno!',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    );
+                  }
 
-      return Center(
-        child: Text('Aún no hay grupos para ${widget.branchName}. ¡Agrega uno!'),
-      );
-    } catch (e, stack) {
-      print("⚠️ Error en StreamBuilder: $e\n$stack");
-      return const Text('Error al renderizar grupos.');
-    }
-  },
-)
-
-            
-            // =========================================================
-
-          ],
+                  // Construir lista de grupos
+                  return Column(
+                    children: snapshot.data!.docs.map((DocumentSnapshot document) {
+                      try {
+                        final data = document.data() as Map<String, dynamic>? ?? {};
+                        final groupData = {
+                          'name': data['nombre_grupo'] ?? 'Sin Nombre',
+                          'beltType': data['tipo_cinta'] ?? 'N/A',
+                          'schedule': data['horario'] ?? 'Sin horario',
+                          'alumns': '${data['total_alumnos'] ?? 0} participantes',
+                        };
+                        return _buildGroupCard(groupData);
+                      } catch (e) {
+                        print("Error al procesar documento: $e");
+                        return const SizedBox.shrink();
+                      }
+                    }).toList(),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // El resto de tus métodos (que usan la lista 'group'):
-
+  // =================================================================
+  // === TARJETA DE GRUPO ===
+  // =================================================================
   Widget _buildGroupCard(Map<String, dynamic> group) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final double maxCardWidth = constraints.maxWidth > 800 ? 600 : constraints.maxWidth * 0.95;
-        
+        final double maxCardWidth =
+            constraints.maxWidth > 800 ? 600 : constraints.maxWidth * 0.95;
+
         return Center(
           child: InkWell(
-            onTap: () { // 👇 Aquí navegas a la nueva pantalla
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ActivitiesSection(
-                  groupName: group['name'], // 👈 Pasas el nombre aquí
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ActivitiesSection(
+                    groupName: group['name'],
+                  ),
                 ),
-              ),
-            );
-              
+              );
             },
             child: Container(
               width: maxCardWidth,
@@ -205,10 +223,10 @@ void _openAddGroupDialog(BuildContext context) async {
                   ),
                 ],
               ),
-              
               child: Row(
                 children: [
-                  Expanded(
+                  Flexible(
+                    fit: FlexFit.loose,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -250,7 +268,7 @@ void _openAddGroupDialog(BuildContext context) async {
                     Icons.group_outlined,
                     size: 50,
                     color: Color.fromARGB(255, 57, 56, 56),
-                  ),
+                  )
                 ],
               ),
             ),
@@ -259,21 +277,29 @@ void _openAddGroupDialog(BuildContext context) async {
       },
     );
   }
-  
-  // El resto de tus métodos de navegación permanecen iguales...
+
+  // =================================================================
+  // === OBTENER PANTALLA ACTUAL ===
+  // =================================================================
   Widget _getCurrentScreen() {
     switch (_selectedIndex) {
       case 0:
-        return _buildGroupsContent(); 
+        return _buildGroupsContent();
       case 1:
         return WalletScreen();
       case 2:
-        return ProfileScreen(fullName: 'Josepe', email: 'Josepe13186', phone: '34234234', role: 'Administrador', imageUrl: '',);
+        return ProfileScreen(
+          fullName: 'Josepe',
+          email: 'Josepe13186',
+          phone: '34234234',
+          role: 'Administrador',
+          imageUrl: '',
+        );
       default:
         return _buildGroupsContent();
     }
   }
-  
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -285,16 +311,17 @@ void _openAddGroupDialog(BuildContext context) async {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('Grupos en ${widget.branchName}',style: const TextStyle(color: Colors.white)),
-        backgroundColor: Colors.black, 
+        title: Text(
+          'Grupos en ${widget.branchName}',
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: _getCurrentScreen(),
-      
-      floatingActionButton: const NotesButton(), // Asegúrate de que NotesButton sea const si no usa variables de estado
-      
+      floatingActionButton: const NotesButton(),
       bottomNavigationBar: CustomNavigationBarAdmin(
-        currentIndex: _selectedIndex, 
+        currentIndex: _selectedIndex,
         onTap: _onItemTapped,
       ),
     );
