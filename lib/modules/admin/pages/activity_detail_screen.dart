@@ -130,9 +130,11 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancelar'),
+            // style: TextStyle(color: colors.white),
+            
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red,     foregroundColor: Colors.white),
             onPressed: () {
               setState(() {
                 _exercises.removeAt(index);

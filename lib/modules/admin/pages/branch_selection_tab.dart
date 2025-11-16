@@ -82,11 +82,16 @@ class _BranchesScreenState extends State<BranchesScreen> {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   late final Stream<QuerySnapshot> _branchesStream;
 
+    String _searchQuery = ''; // ← Nueva variable
+
+
   @override
   void initState() {
     super.initState();
     _branchesStream = _db.collection('sucursales').orderBy('name').snapshots();
   }
+
+
 
   void _openAddBranchDialog(BuildContext context) {
     showDialog(
@@ -159,6 +164,20 @@ class _BranchesScreenState extends State<BranchesScreen> {
     );
   }
 
+
+  
+  // Función para filtrar por nombre
+  List<Map<String, dynamic>> _filtrarSucursales(
+    List<Map<String, dynamic>> sucursales,
+    String query,
+  ) {
+    if (query.isEmpty) return sucursales;
+    return sucursales.where((sucursal) {
+      final nombre = (sucursal['name'] as String?)?.toLowerCase() ?? '';
+      return nombre.contains(query.toLowerCase());
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -170,7 +189,15 @@ class _BranchesScreenState extends State<BranchesScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 🔹 Barra de búsqueda
-              BarSearch(),
+              // ✅ BarSearch con funcionalidad
+              BarSearch(
+                hintText: 'Buscar sucursal',
+                onSearch: (query) {
+                  setState(() {
+                    _searchQuery = query;
+                  });
+                },
+              ),
               const SizedBox(height: 10),
 
               // 🔹 Botón "Agregar Sucursal"
@@ -234,8 +261,21 @@ class _BranchesScreenState extends State<BranchesScreen> {
                       };
                     }).toList();
 
+                     // ✅ Filtrar según la búsqueda
+                      final branchesFiltradas = _filtrarSucursales(
+                        branchesFromFirebase,
+                        _searchQuery,
+                      );
+
+                       if (branchesFiltradas.isEmpty) {
+                        return const Center(child: Text('No hay resultados.'));
+                      }
+
+
                     return AdaptiveBranchList(
-                      branches: branchesFromFirebase,
+                      // branches: branchesFromFirebase, //  ERROR: no es branchesFiltradas
+                      branches: branchesFiltradas,
+
                       icon: Icons.location_on_outlined,
                       onTap: (branchName) {
                         Navigator.push(

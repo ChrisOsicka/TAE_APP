@@ -8,12 +8,25 @@ class ActivitiesCard extends StatelessWidget {
 
   final VoidCallback? onAddActivity; // ← Callback opcional
 
+    // 👇 Nuevos callbacks
+  final Function(int index, String newName)? onNameChanged;
+  final Function(int index)? onDelete;
+
+  // 👇 Nuevo callback para editar el NOMBRE DE LA CINTA
+  final ValueChanged<String>? onBeltNameChanged;
+
+  
+
   //const ActivitiesCard({super.key});
   const ActivitiesCard({
     Key? key,
     required this.groups,
     required this.groupTitle,
     this.onAddActivity,
+     this.onNameChanged,
+    this.onDelete,
+    this.onBeltNameChanged, // ← Aquí
+
   }) : super(key: key);
 
   // Callback para cuando se edite
@@ -21,6 +34,54 @@ class ActivitiesCard extends StatelessWidget {
     print("Editar $groupTitle");
     // Aquí puedes abrir un diálogo, navegar, etc.
   }
+
+  void _showEditBeltNameDialog(
+  BuildContext context,
+  String currentName,
+  ValueChanged<String>? onConfirm,
+) {
+  final nameController = TextEditingController(text: currentName);
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Editar nombre de la cinta'),
+      content: TextField(
+        controller: nameController,
+        decoration: const InputDecoration(
+          hintText: 'Nuevo nombre',
+          border: OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: Navigator.of(context).pop,
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          
+          onPressed: () {
+            final newName = nameController.text.trim();
+            if (newName.isNotEmpty && newName != currentName) {
+              onConfirm?.call(newName);
+            } else if (newName == currentName) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('El nombre ya está actualizado')),
+              );
+            }
+            Navigator.of(context).pop();
+          },
+          child: const Text('Guardar'),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 14, 162, 221),
+                foregroundColor: const Color.fromARGB(255, 241, 239, 239), // color del texto
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+        ),
+      ],
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -33,8 +94,10 @@ class ActivitiesCard extends StatelessWidget {
             // ✅ Widget reutilizable con menú
             GroupHeaderWithMenu(
               title: groupTitle, // ← Personalizado
-              onEdit: _handleEdit, // ← Opcional: define qué hacer al editar
-            ),
+              onEdit: () {
+                  _showEditBeltNameDialog(context, groupTitle, onBeltNameChanged);
+                },            
+                ),
             const SizedBox(width: 25),
             InkWell(
               // Agregar una actividad
@@ -60,7 +123,20 @@ class ActivitiesCard extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             itemCount: groups.length,
             itemBuilder: (context, index) {
-              return ActivityCard(group: groups[index]);
+              return ActivityCard(
+                group: groups[index],
+                onNameChanged: (newName) {
+                  // 👈 Aquí usas el index que conoces
+                  onNameChanged?.call(index, newName);
+                },
+                onDelete: () {
+                  // 👈 Aquí usas el index que conoces
+                  onDelete?.call(index);
+                },
+                        
+                            
+
+                );
             },
           ),
         ),
@@ -185,7 +261,20 @@ class GroupHeaderWithMenu extends StatelessWidget {
 class ActivityCard extends StatelessWidget {
   final Map<String, dynamic> group;
 
-  const ActivityCard({Key? key, required this.group}) : super(key: key);
+  // 👇 Nuevos callbacks para editar/eliminar actividades
+  final ValueChanged<String>? onNameChanged; // ✅ Solo el nuevo nombre
+  final VoidCallback? onDelete;              // ✅ Sin parámetros
+
+  
+
+  const ActivityCard({
+    Key? key,
+    required this.group,
+    this.onNameChanged,
+    this.onDelete,
+    }) : super(key: key);
+  
+  
 
   @override
   Widget build(BuildContext context) {
@@ -237,31 +326,153 @@ class ActivityCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                 // ✅ Botón de edición mejorado
                 IconButton(
-                  icon: Icon(Icons.edit_note_sharp, size: 20),
-                  onPressed: () {
-                    // Acción de configuración
-                  },
+                  icon: const Icon(Icons.edit_note_sharp, size: 20),
+                  onPressed: () => _showEditDialog(context),
                 ),
+                
                 IconButton(
-  icon: const Icon(Icons.arrow_forward_ios, size: 16),
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ActivityDetailScreen(
-          activityName: group['name'],
-          exercises: List<String>.from(group['exercises']),
-        ),
-      ),
-    );
-  },
-)
+                  icon: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ActivityDetailScreen(
+                          activityName: group['name'],
+                          exercises: List<String>.from(group['exercises']),
+                        ),
+                      ),
+                    );
+                  },
+                )
               ],
             ),
           ],
         ),
       ),
+
+      
     );
   }
+
+  // 🗂️ Diálogo principal: Editar nombre o Eliminar
+  void _showEditNameDialog(BuildContext context) {
+  final nameController = TextEditingController(text: group['name']); // ✅ group, no activity
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Editar nombre'),
+      content: TextField(
+        controller: nameController,
+        decoration: const InputDecoration(
+          hintText: 'Nuevo nombre',
+          border: OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: Navigator.of(context).pop,
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          
+          onPressed: () {
+            final newName = nameController.text.trim();
+            if (newName.isNotEmpty) {
+              onNameChanged?.call(newName);
+            }
+            Navigator.of(context).pop();
+          },
+          child: const Text('Guardar'),
+
+          style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 14, 162, 221),
+                foregroundColor: const Color.fromARGB(255, 241, 239, 239), // color del texto
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+        ),
+      ],
+    ),
+  );
 }
+
+ 
+      // 🗑️ Diálogo de confirmación para eliminar
+      
+      void _showDeleteConfirmation(BuildContext context) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('¿Eliminar actividad?'),
+          content: Text('Se eliminará la actividad "${group['name']}".\nEsta acción no se puede deshacer.'), // ✅ group
+          actions: [
+            TextButton(
+              onPressed: Navigator.of(context).pop,
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              
+              onPressed: () {
+                onDelete?.call();
+                Navigator.of(context).pop();
+              },
+              child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 🗂️ Diálogo principal: muestra las opciones "Editar nombre" y "Eliminar"
+    void _showEditDialog(BuildContext context) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Opciones de actividad'),
+          content: const Text('¿Qué deseas hacer con esta actividad?'),
+          actions: [
+            TextButton(
+              onPressed: Navigator.of(context).pop,
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 11, 142, 230),
+                foregroundColor: const Color.fromARGB(255, 54, 54, 54), // color del texto
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              
+              onPressed: () {
+                Navigator.of(context).pop();
+                _showEditNameDialog(context); // ← Abre edición de nombre
+              },
+              
+
+
+              
+              child: const Text('Editar nombre', 
+              style: TextStyle(color: Color.fromARGB(255, 238, 238, 238)),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 177, 2, 2),
+                foregroundColor: const Color.fromARGB(255, 54, 54, 54), // color del texto
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _showDeleteConfirmation(context); // ← Abre confirmación de eliminación
+              },
+              child: const Text('Eliminar', style: TextStyle(color: Color.fromARGB(255, 253, 253, 253))),
+            ),
+          ],
+        ),
+      );
+    }
+}
+
+

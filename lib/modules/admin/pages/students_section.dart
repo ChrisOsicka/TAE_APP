@@ -54,6 +54,33 @@ class _StudentsSectionScreenState extends State<StudentsSectionScreen> {
     ],
   };
 
+Map<String, List<Map<String, dynamic>>> _filtrarAlumnos(
+  Map<String, List<Map<String, dynamic>>> todos,
+  String query,
+) {
+  if (query.isEmpty) return todos;
+
+  final queryLower = query.toLowerCase();
+  final resultado = <String, List<Map<String, dynamic>>>{};
+
+  for (final entry in todos.entries) {
+    final cinta = entry.key;
+    final alumnos = entry.value;
+
+    final coincidencias = alumnos.where((alumno) {
+      return (alumno['name'] as String).toLowerCase().contains(queryLower);
+    }).toList();
+
+    if (coincidencias.isNotEmpty) {
+      resultado[cinta] = coincidencias;
+    }
+  }
+
+  return resultado;
+}
+
+String _searchQuery = '';
+
   @override
   void initState() {
     super.initState();
@@ -80,7 +107,23 @@ class _StudentsSectionScreenState extends State<StudentsSectionScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Barra de búsqueda (si la tienes)
-                BarSearch(),
+                BarSearch(
+                hintText: 'Buscar alumno por nombre',
+                onSearch: (query) {
+                  setState(() {
+                    _searchQuery = query;
+                    // Opcional: limpia selecciones que ya no están visibles
+                    if (query.isNotEmpty) {
+                      final alumnosVisibles = _filtrarAlumnos(_beltStudents, query)
+                          .values
+                          .expand((list) => list)
+                          .toSet();
+                      _selectedStudentsGlobal.retainWhere((alumno) => alumnosVisibles.contains(alumno));
+                    }
+                  });
+                },
+                
+                ),
 
                 const SizedBox(height: 20),
 
@@ -197,36 +240,23 @@ class _StudentsSectionScreenState extends State<StudentsSectionScreen> {
                 const SizedBox(height: 20),
 
                 // Lista de grupos por cinta
-                ..._beltStudents.entries
-                    .map(
-                      (entry) => BeltGroup(
-                        beltName: entry.key,
-                        students: entry.value,
-                        onSeeMore: () {
-                          print("Ver más de ${entry.key}");
-                        },
-                        //(5) creamos cada BeltGroup:
-                        /*  Esto actualiza la lista global:
-                        - Primero elimina del conjunto global los 
-                          alumnos que pertenecen a ese grupo.
-                        - Luego agrega los alumnos que sí están 
-                          seleccionados en ese grupo.
-
-
-                        Así, _selectedStudentsGlobal siempre refleja todos 
-                        los alumnos seleccionados sin duplicados.
-                        */
-                         onSelectionChanged: (selectedFromGroup) {
-                          setState(() {
-                            // Actualizamos el conjunto global con los seleccionados de cada grupo
-                            _selectedStudentsGlobal
-                              ..removeWhere((s) => entry.value.contains(s))
-                              ..addAll(selectedFromGroup);
-                          });
-                         },
-                      ),
-                    )
-                    .toList(),
+                ..._filtrarAlumnos(_beltStudents, _searchQuery).entries
+    .map((entry) => BeltGroup(
+          beltName: entry.key,
+          students: entry.value,
+          onSeeMore: () {
+            print("Ver más de ${entry.key}");
+          },
+          onSelectionChanged: (selectedFromGroup) {
+            setState(() {
+              // Actualizamos el conjunto global
+              _selectedStudentsGlobal
+                ..removeWhere((s) => entry.value.contains(s))
+                ..addAll(selectedFromGroup);
+            });
+          },
+        ))
+    .toList(),
               ],
             ),
           ),

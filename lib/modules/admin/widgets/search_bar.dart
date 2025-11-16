@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 
 class BarSearch extends StatelessWidget {
+  final String hintText;
+  final ValueChanged<String> onSearch; // Callback cuando el texto cambi
+
   const BarSearch({
     super.key,
+    this.hintText = 'Buscar',
+    required this.onSearch,
   });
 
   @override
   Widget build(BuildContext context) {
     return TextField(
+      onChanged: onSearch, // ← Aquí se conecta la lógica externa
+
       // InputDecoration: decora la caja de texto.
       decoration: InputDecoration(
         // hintText: texto gris que aparece cuando no has escrito nada.
@@ -18,7 +25,7 @@ class BarSearch extends StatelessWidget {
         // filled: true le dice a Flutter que el fondo del campo de texto debe estar relleno.
         // Si no colocamos filled: true, el fillColor no se aplica.
         filled: true,
-        fillColor: Colors.purple[50],
+        fillColor: const Color.fromARGB(255, 208, 227, 235),
     
         // Controla el espacio interno del TextField (lo que hay entre el borde y el texto que escribes).
         contentPadding: const EdgeInsets.symmetric(

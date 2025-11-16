@@ -249,6 +249,31 @@ class _ActivitiesSectionScreenState extends State<ActivitiesSectionScreen> {
     {"name": "Juriquilla", "classes": 3, "participants": 65},
   ];
 
+
+  String _searchQuery = '';
+
+
+  List<MapEntry<String, List<Map<String, dynamic>>>> _filtrarActividades(
+  Map<String, List<Map<String, dynamic>>> actividades,
+  String query,
+) {
+  if (query.isEmpty) {
+    return actividades.entries.toList();
+  }
+
+  final queryLower = query.toLowerCase();
+
+  return actividades.entries.where((entry) {
+    final cintaMatch = entry.key.toLowerCase().contains(queryLower);
+    final actividadesMatch = entry.value.any((actividad) =>
+        actividad['name'].toString().toLowerCase().contains(queryLower) ||
+        (actividad['exercises'] as List)
+            .any((e) => e.toString().toLowerCase().contains(queryLower)));
+    return cintaMatch || actividadesMatch;
+  }).toList();
+}
+
+
   // ✅ Mapa: cada cinta tiene su propia lista de actividades
   /*Map<Clave, Valor>
 │
@@ -379,7 +404,14 @@ setState() actualiza la UI.
               children: [
 
                 // Llamamos a la barra de busqueda que ya se separa en un widget a parte.
-                BarSearch(),
+                BarSearch(
+                    hintText: 'Buscar actividad o cinta',
+                    onSearch: (query) {
+                      setState(() {
+                        _searchQuery = query;
+                      });
+                    },
+                ),
 
                 // Crea un espacio vertical de 10 píxeles entre la caja de búsqueda y el siguiente elemento.
                 const SizedBox(height: 20),
@@ -548,15 +580,57 @@ setState() actualiza la UI.
 
                 // ES DONDE SE ARMAN LAS TARJETAS, ES UNA FUNCIÓN A PARTE EN ESTE MISMO ARCHIVO
                 // Por esto:
-                ..._beltActivities.entries
-                    .map(
-                      (entry) => ActivitiesCard(
-                       groups: entry.value,
-                       groupTitle: entry.key,
-                       onAddActivity: () => _showAddActivityDialog(entry.key), // ← Llama a una función nueva
-                      ),
-                    )
-                    .toList(),
+                ..._filtrarActividades(_beltActivities, _searchQuery)
+                .map((entry) {
+                  final beltKey = entry.key; // ✅ Guarda el key aquí
+                  return ActivitiesCard(
+                    groups: entry.value,
+                    groupTitle: beltKey,
+                    onAddActivity: () => _showAddActivityDialog(beltKey),
+                    onNameChanged: (index, newName) {
+                      setState(() {
+                        _beltActivities[beltKey]![index]['name'] = newName; // ✅ Usa beltKey
+                      });
+                      // ✅ Muestra mensaje de éxito
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('Nombre actualizado correctamente'),
+                          backgroundColor: Colors.green,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    
+                    onDelete: (index) {
+                      setState(() {
+                        _beltActivities[beltKey]!.removeAt(index);
+                        if (_beltActivities[beltKey]!.isEmpty) {
+                          _beltActivities.remove(beltKey);
+                        }
+                      });
+                    },
+
+
+                    // 👇 Callback para editar el NOMBRE DE LA CINTA
+      onBeltNameChanged: (newName) {
+        setState(() {
+          // 1. Guardamos las actividades bajo el nuevo nombre
+          final activities = _beltActivities[beltKey]!;
+          // 2. Eliminamos la entrada antigua
+          _beltActivities.remove(beltKey);
+          // 3. Añadimos con el nuevo nombre
+          _beltActivities[newName] = activities;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Nombre de cinta actualizado'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      },
+    
+                  );
+                }).toList(),
               ],
             ),
           ),

@@ -22,6 +22,8 @@ class _BranchGroupsScreenState extends State<BranchGroupsScreen> {
   int _selectedIndex = 0;
   late Stream<QuerySnapshot> _groupsStream;
 
+  String _searchQuery = '';
+
   @override
   void initState() {
     super.initState();
@@ -89,7 +91,14 @@ class _BranchGroupsScreenState extends State<BranchGroupsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              BarSearch(),
+              BarSearch(
+                hintText: 'Buscar grupo, cinta o horario',
+                onSearch: (query) {
+                  setState(() {
+                    _searchQuery = query;
+                  });
+                },
+              ),
               const SizedBox(height: 10),
 
               // Botón Agregar Grupo
@@ -122,64 +131,64 @@ class _BranchGroupsScreenState extends State<BranchGroupsScreen> {
               const SizedBox(height: 20),
 
               // === StreamBuilder: Escucha cambios en 'grupos' ===
+
+              // === StreamBuilder mejorado con filtro local ===
               StreamBuilder<QuerySnapshot>(
-                stream: _groupsStream,
-                builder: (context, snapshot) {
+              stream: _groupsStream,
+              builder: (context, snapshot) {
+                try {
                   if (snapshot.hasError) {
-                    print("Error en StreamBuilder: ${snapshot.error}");
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Text(
-                          'Error al cargar los grupos. Por favor intenta de nuevo.',
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    );
+                    return const Text('¡Oh no! Tuvimos un error al cargar los grupos.');
                   }
 
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(32.0),
-                        child: CircularProgressIndicator(),
-                      ),
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+                    // 1. Extraer todos los grupos desde Firebase
+                    final allGroups = snapshot.data!.docs.map((doc) {
+                      final data = doc.data() as Map<String, dynamic>? ?? {};
+                      return {
+                        'name': data['nombre_grupo'] ?? 'Sin Nombre',
+                        'beltType': data['tipo_cinta'] ?? 'N/A',
+                        'schedule': data['horario'] ?? 'Sin horario',
+                        'alumns': '${data['total_alumnos'] ?? 0} participantes',
+                      };
+                    }).toList();
+
+                    // 2. Filtrar localmente según _searchQuery
+                    List<Map<String, dynamic>> filteredGroups = allGroups;
+                    if (_searchQuery.isNotEmpty) {
+                      final query = _searchQuery.toLowerCase();
+                      filteredGroups = allGroups.where((group) {
+                        final name = (group['name'] as String).toLowerCase();
+                        final belt = (group['beltType'] as String).toLowerCase();
+                        final schedule = (group['schedule'] as String).toLowerCase();
+                        return name.contains(query) || belt.contains(query) || schedule.contains(query);
+                      }).toList();
+                    }
+
+                    // 3. Mostrar resultados
+                    if (filteredGroups.isEmpty) {
+                      return const Center(child: Text('No se encontraron grupos.'));
+                    }
+
+                    return Column(
+                      children: filteredGroups.map((group) => _buildGroupCard(group)).toList(),
                     );
                   }
 
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(32.0),
-                        child: Text(
-                          'Aún no hay grupos para ${widget.branchName}.\n¡Agrega uno!',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      ),
-                    );
-                  }
-
-                  // Construir lista de grupos
-                  return Column(
-                    children: snapshot.data!.docs.map((DocumentSnapshot document) {
-                      try {
-                        final data = document.data() as Map<String, dynamic>? ?? {};
-                        final groupData = {
-                          'name': data['nombre_grupo'] ?? 'Sin Nombre',
-                          'beltType': data['tipo_cinta'] ?? 'N/A',
-                          'schedule': data['horario'] ?? 'Sin horario',
-                          'alumns': '${data['total_alumnos'] ?? 0} participantes',
-                        };
-                        return _buildGroupCard(groupData);
-                      } catch (e) {
-                        print("Error al procesar documento: $e");
-                        return const SizedBox.shrink();
-                      }
-                    }).toList(),
+                  return Center(
+                    child: Text('Aún no hay grupos para ${widget.branchName}. ¡Agrega uno!'),
                   );
-                },
-              ),
+                } catch (e, stack) {
+                  print("⚠️ Error en StreamBuilder: $e\n$stack");
+                  return const Text('Error al renderizar grupos.');
+                }
+              },
+            ),
+            
             ],
           ),
         ),
