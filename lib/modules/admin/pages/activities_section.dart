@@ -146,6 +146,61 @@ class _ActivitiesSectionScreenState extends State<ActivitiesSectionScreen> {
     }
   }
 
+   // ----------------------------------------------------
+  // BORRAR ACTIVIDAD
+  // ----------------------------------------------------
+  void _deleteActivity(String activityId) async {
+  final String? groupId = widget.groupName;
+  if (groupId == null || groupId.isEmpty) return;
+
+  try {
+    // 1. Eliminar el documento de la subcolección /actividades
+    await _db
+        .collection('grupos').doc(groupId)
+        .collection('actividades').doc(activityId).delete();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('🗑️ Actividad eliminada con éxito.')),
+      );
+    }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al eliminar la actividad.')),
+      );
+    }
+  }
+}
+
+// ----------------------------------------------------
+  // EDITAR ACTIVIDAD
+  // ----------------------------------------------------
+
+void _updateActivityName(String activityId, String newName) async {
+  final String? groupId = widget.groupName;
+  if (groupId == null || groupId.isEmpty) return;
+
+  try {
+    // 1. Ejecutar la actualización en el documento específico
+    await _db
+        .collection('grupos').doc(groupId)
+        .collection('actividades').doc(activityId)
+        .update({'nombre_actividad': newName}); // Actualizamos solo el campo 'nombre_actividad'
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('✅ Nombre de actividad actualizado en Firebase.')),
+      );
+    }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al actualizar nombre.')),
+      );
+    }
+  }
+}
   // ----------------------------------------------------
   // Lógica de Filtrado (Adaptada para datos de Firebase)
   // ----------------------------------------------------
@@ -352,10 +407,17 @@ class _ActivitiesSectionScreenState extends State<ActivitiesSectionScreen> {
 
                       // Si la cinta existe (marcador), siempre devolvemos la ActivitiesCard
                       return ActivitiesCard(
-                        groups: activitiesList, // Lista de actividades filtradas (puede ser vacía)
+                        group: activitiesList, // Lista de actividades filtradas (puede ser vacía)
                         groupTitle: beltName, // Título: "Cintas Blancas"
                         onAddActivity: () => _showAddActivityDialog(beltName), 
                         // Los callbacks de edición/eliminación deben actualizar Firebase
+                        // 🚨 CONEXIÓN FALTANTE PARA EDITAR:
+                        onNameChanged: (activityId, newName) {
+                        _updateActivityName(activityId, newName);
+                        },
+                        onDelete: (activityId) {
+                          _deleteActivity(activityId);
+                      },
                       );
                     },
                   );

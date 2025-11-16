@@ -2,25 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:tae_app/modules/admin/pages/activity_detail_screen.dart';
 
 class ActivitiesCard extends StatelessWidget {
-  final List<Map<String, dynamic>> groups;
+  final List<Map<String, dynamic>> group;
 
   final String groupTitle;
-
   final VoidCallback? onAddActivity; // ← Callback opcional
 
     // 👇 Nuevos callbacks
-  final Function(int index, String newName)? onNameChanged;
-  final Function(int index)? onDelete;
+  final Function(String activityId, String newName)? onNameChanged;
+  final Function(String activityId)? onDelete;
 
   // 👇 Nuevo callback para editar el NOMBRE DE LA CINTA
   final ValueChanged<String>? onBeltNameChanged;
-
-  
+    
 
   //const ActivitiesCard({super.key});
   const ActivitiesCard({
     Key? key,
-    required this.groups,
+    required this.group,
     required this.groupTitle,
     this.onAddActivity,
      this.onNameChanged,
@@ -121,17 +119,18 @@ class ActivitiesCard extends StatelessWidget {
           height: 200, // Altura fija para que se vea bien
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            itemCount: groups.length,
+            itemCount: group.length,
             itemBuilder: (context, index) {
+              final activity = group[index];
+              final String activityId = activity['id'] as String;
               return ActivityCard(
-                group: groups[index],
-                onNameChanged: (newName) {
-                  // 👈 Aquí usas el index que conoces
-                  onNameChanged?.call(index, newName);
+                group: activity,
+                onNameChanged: (newName){
+                 this.onNameChanged?.call(activityId, newName);
                 },
                 onDelete: () {
                   // 👈 Aquí usas el index que conoces
-                  onDelete?.call(index);
+                  onDelete?.call(activityId);
                 },
                         
                             
@@ -359,7 +358,7 @@ class ActivityCard extends StatelessWidget {
   // 🗂️ Diálogo principal: Editar nombre o Eliminar
   void _showEditNameDialog(BuildContext context) {
   final nameController = TextEditingController(text: group['name']); // ✅ group, no activity
-
+  final String activityId = group['id'] as String; // 🚨 Obtén el ID aquí
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
