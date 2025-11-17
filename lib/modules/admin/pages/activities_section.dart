@@ -543,6 +543,7 @@ class _ActivitiesSectionScreenState extends State<ActivitiesSectionScreen> {
                           return ActivitiesCard(
                             group: activitiesList,
                             groupTitle: beltName,
+                            groupId: groupId,
                             onAddActivity: () => _showAddActivityDialog(beltName),
                             onNameChanged: (activityId, newName) {
                               _updateActivityName(activityId, newName);

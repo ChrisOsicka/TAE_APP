@@ -5,6 +5,7 @@ class ActivitiesCard extends StatelessWidget {
   final List<Map<String, dynamic>> group;
 
   final String groupTitle;
+  final String groupId;
   final VoidCallback? onAddActivity; // ← Callback opcional
 
     // 👇 Nuevos callbacks
@@ -20,6 +21,7 @@ class ActivitiesCard extends StatelessWidget {
     Key? key,
     required this.group,
     required this.groupTitle,
+    required this.groupId,
     this.onAddActivity,
      this.onNameChanged,
     this.onDelete,
@@ -125,6 +127,8 @@ class ActivitiesCard extends StatelessWidget {
               final String activityId = activity['id'] as String;
               return ActivityCard(
                 group: activity,
+                activityId: activityId,      // ✅ Ahora SÍ lo pasamos
+                groupId: groupId,
                 onNameChanged: (newName){
                  this.onNameChanged?.call(activityId, newName);
                 },
@@ -259,18 +263,22 @@ class GroupHeaderWithMenu extends StatelessWidget {
 // Tarjeta individual
 class ActivityCard extends StatelessWidget {
   final Map<String, dynamic> group;
-
+  final String activityId;  // ✅ NUEVO: ID de la actividad
+  final String groupId;      // ✅ NUEVO: ID del grupo
   // 👇 Nuevos callbacks para editar/eliminar actividades
   final ValueChanged<String>? onNameChanged; // ✅ Solo el nuevo nombre
   final VoidCallback? onDelete;              // ✅ Sin parámetros
-
+  final VoidCallback? onTap; // Para manejar el tap y la navegación
   
 
   const ActivityCard({
     Key? key,
     required this.group,
+    required this.activityId,   // ✅ NUEVO: Obligatorio
+    required this.groupId,
     this.onNameChanged,
     this.onDelete,
+    this.onTap, // Recibe el callback
     }) : super(key: key);
   
   
@@ -338,6 +346,8 @@ class ActivityCard extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) => ActivityDetailScreen(
+                          activityId: activityId,     // ✅ Pasamos el ID
+                          groupId: groupId,
                           activityName: group['name'],
                           exercises: List<String>.from(group['exercises']),
                         ),
