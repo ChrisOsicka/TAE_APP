@@ -136,9 +136,6 @@ class ActivitiesCard extends StatelessWidget {
                   // 👈 Aquí usas el index que conoces
                   onDelete?.call(activityId);
                 },
-                        
-                            
-
                 );
             },
           ),

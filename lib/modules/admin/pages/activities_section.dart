@@ -348,6 +348,80 @@ class _ActivitiesSectionScreenState extends State<ActivitiesSectionScreen> {
   );
   }
 
+  void _updateBeltSectionName(String oldName, String newName) async {
+  final String? groupId = widget.groupName;
+  if (groupId == null || groupId.isEmpty) return;
+
+  try {
+    // 1. Obtener los datos de la sección antigua
+    final oldDoc = await _db
+        .collection('grupos')
+        .doc(groupId)
+        .collection('secciones_cinta')
+        .doc(oldName)
+        .get();
+
+    if (!oldDoc.exists) {
+      throw Exception('La sección no existe');
+    }
+
+    final data = oldDoc.data() ?? {};
+
+    // 2. Crear nuevo documento con el nuevo nombre
+    await _db
+        .collection('grupos')
+        .doc(groupId)
+        .collection('secciones_cinta')
+        .doc(newName)
+        .set({
+      ...data,
+      'nombre_cinta': newName,
+    });
+
+    // 3. Actualizar todas las actividades que pertenecen a esta cinta
+    final activitiesSnapshot = await _db
+        .collection('grupos')
+        .doc(groupId)
+        .collection('actividades')
+        .where('cinta_seccion', isEqualTo: oldName)
+        .get();
+
+    // Actualizar cada actividad en un batch
+    final batch = _db.batch();
+    for (var doc in activitiesSnapshot.docs) {
+      batch.update(doc.reference, {'cinta_seccion': newName});
+    }
+    await batch.commit();
+
+    // 4. Eliminar el documento antiguo
+    await _db
+        .collection('grupos')
+        .doc(groupId)
+        .collection('secciones_cinta')
+        .doc(oldName)
+        .delete();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('✅ Sección renombrada de "$oldName" a "$newName"'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  } catch (e) {
+    print('Error al renombrar sección: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al renombrar la sección: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+}
+
   // ---------------------------------------------------------
   // MÉTODOS DE BUILD Y VISUALIZACIÓN DINÁMICA - UI RESTAURADA
   // ---------------------------------------------------------
@@ -551,6 +625,9 @@ class _ActivitiesSectionScreenState extends State<ActivitiesSectionScreen> {
                             onDelete: (activityId) {
                               _deleteActivity(activityId);
                             },
+                            onBeltNameChanged: (newName) {
+                            _updateBeltSectionName(beltName, newName);
+                          },
                           );
                         },
                       );
