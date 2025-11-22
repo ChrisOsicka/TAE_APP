@@ -196,20 +196,40 @@ class _ActivitiesSectionScreenState extends State<ActivitiesSectionScreen> {
   // ----------------------------------------------------
   // Lógica de Filtrado - MANTENIDA
   // ----------------------------------------------------
-  List<MapEntry<String, List<Map<String, dynamic>>>> _filtrarActividades(
-      Map<String, List<Map<String, dynamic>>> actividades, String query) {
-    if (query.isEmpty) {
-      return actividades.entries.toList();
-    }
-    final queryLower = query.toLowerCase();
-    return actividades.entries.where((entry) {
-      final cintaMatch = entry.key.toLowerCase().contains(queryLower);
-      final actividadesMatch = entry.value.any((actividad) =>
-          actividad['name'].toString().toLowerCase().contains(queryLower) ||
-          (actividad['exercises'] is List && (actividad['exercises'] as List).any((e) => e.toString().toLowerCase().contains(queryLower))));
-      return cintaMatch || actividadesMatch;
-    }).toList();
+  Map<String, List<Map<String, dynamic>>> _filtrarActividades(
+  Map<String, List<Map<String, dynamic>>> allActivities,
+  String query,
+) {
+  // 1. Si la consulta está vacía, devuelve la lista completa.
+  if (query.isEmpty) {
+    return allActivities;
   }
+
+  // 2. Convierte la consulta a minúsculas una sola vez.
+  final lowerCaseQuery = query.toLowerCase();
+  
+  final Map<String, List<Map<String, dynamic>>> filtered = {};
+
+  // 3. Iterar sobre las cintas (beltName) y sus listas de actividades.
+  allActivities.forEach((beltName, activities) {
+    final filteredActivities = activities.where((activity) {
+      
+      // Asegúrate de que estás leyendo la clave correcta, 
+      // probablemente 'name' o 'nombre_actividad'
+      final activityName = activity['name'] as String? ?? ''; 
+      
+      // 📌 CORRECCIÓN CLAVE: 
+      // Convierte el nombre de la actividad a minúsculas antes de buscar.
+      return activityName.toLowerCase().contains(lowerCaseQuery);
+    }).toList();
+
+    if (filteredActivities.isNotEmpty) {
+      filtered[beltName] = filteredActivities;
+    }
+  });
+
+  return filtered;
+}
 
   // ----------------------------------------------------
   // DIÁLOGO PARA AGREGAR ACTIVIDAD - DISEÑO RESTAURADO
@@ -614,8 +634,44 @@ class _ActivitiesSectionScreenState extends State<ActivitiesSectionScreen> {
                                 'exercises': doc['ejercicios'] ?? [],
                               }).toList() ?? [];
 
+                              // ✅ FILTRAR las actividades según la búsqueda
+      final List<Map<String, dynamic>> filteredActivities = _searchQuery.isEmpty
+          ? activitiesList
+          : activitiesList.where((activity) {
+              final name = (activity['name'] as String).toLowerCase();
+              final exercises = activity['exercises'] as List<dynamic>? ?? [];
+              final exercisesMatch = exercises.any(
+                (e) => e.toString().toLowerCase().contains(_searchQuery.toLowerCase())
+              );
+              return name.contains(_searchQuery.toLowerCase()) || exercisesMatch;
+            }).toList();
+
+      // ✅ Si estamos buscando y no hay resultados, ocultar esta sección
+      if (_searchQuery.isNotEmpty && filteredActivities.isEmpty) {
+        return const SizedBox.shrink();
+      }
+
+      // ✅ También ocultar si no hay búsqueda y no hay actividades
+      if (activitiesList.isEmpty && _searchQuery.isEmpty) {
+        return ActivitiesCard(
+          group: [],
+          groupTitle: beltName,
+          groupId: groupId,
+          onAddActivity: () => _showAddActivityDialog(beltName),
+          onNameChanged: (activityId, newName) {
+            _updateActivityName(activityId, newName);
+          },
+          onDelete: (activityId) {
+            _deleteActivity(activityId);
+          },
+          onBeltNameChanged: (newName) {
+            _updateBeltSectionName(beltName, newName);
+          },
+        );
+      }
+
                           return ActivitiesCard(
-                            group: activitiesList,
+                            group: filteredActivities,
                             groupTitle: beltName,
                             groupId: groupId,
                             onAddActivity: () => _showAddActivityDialog(beltName),
