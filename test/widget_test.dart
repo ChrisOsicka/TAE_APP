@@ -8,12 +8,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:tae_app/welcome_tae_app.dart';
+import 'package:tae_app/login_page.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(const WelcomeTaeApp());
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);

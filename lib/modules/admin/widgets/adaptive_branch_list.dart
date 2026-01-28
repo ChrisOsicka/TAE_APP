@@ -15,11 +15,15 @@ import 'package:tae_app/modules/admin/widgets/branch_list_view.dart';
   Piensa en él como el cerebro de la responsividad.
   */
 class AdaptiveBranchList extends StatelessWidget {
+
+// 1. Declaración de la nueva función ONTAP
+  final Function(String branchName)? onTap;
+
   const AdaptiveBranchList({
     super.key,
     required this.branches,
-        
-        required this.icon, // <--- Nuevo parámetro para el ícono
+    required this.icon, // <--- Nuevo parámetro para el ícono
+    this.onTap,
 
   });
 
@@ -58,7 +62,8 @@ class AdaptiveBranchList extends StatelessWidget {
           // Aqui ya separamos el armado de tarjetas y el estilo de estas.
           return BranchListView(
             branches: branches, 
-            maxCardWidth: maxCardWidth, icon: icon,  // - 👈 se lo pasa al hijo
+            maxCardWidth: maxCardWidth, 
+            icon: icon,  // - 👈 se lo pasa al hijo
             );
         },
       ),

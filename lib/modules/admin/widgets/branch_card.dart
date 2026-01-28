@@ -99,12 +99,14 @@ class BranchCard extends StatelessWidget {
                       - El número de participantes
                       - Los valores vienen del mapa branch, que es un Map<String, dynamic> dentro de la lista branches.
                     */
-                    Text(
+                    Flexible(
+                    child: Text(
                       branch['name'],
                       style: const TextStyle(
                         fontSize: 23,
                         fontWeight: FontWeight.bold,
                       ),
+                    ),
                     ),
                     const SizedBox(height: 4),
                     Text(

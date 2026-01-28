@@ -1,16 +1,45 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Importación clave de Auth
 import 'package:cloud_firestore/cloud_firestore.dart'; // Importación para Firestore
+import 'package:tae_app/firebase_options.dart';
 /*
 Este importa el paquete material.dart, 
 que es parte del framework de Flutter y 
 te da acceso a componentes de diseño Material 
 (como botones, cajas de texto, AppBar, etc.).
 */
-import '../../admin/pages/branch_selection_tab.dart';
-import 'forgot_password_page.dart';
-import 'type_register.dart';
+import '../modules/admin/pages/branch_selection_tab.dart';
+import '../modules/authentication/pages/forgot_password_page.dart';
+import '../modules/authentication/pages/type_register.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // Necesario antes de usar Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  runApp(const WelcomeTaeApp());
+}
+
+// 2. Crea un nuevo widget que envuelva a tu LoginPage con MaterialApp.
+class WelcomeTaeApp extends StatelessWidget {
+  const WelcomeTaeApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      // (Opcional) Puedes añadir un título a la aplicación
+      title: 'TAE App', 
+      // La propiedad 'home' define el widget inicial (tu LoginPage)
+      home: LoginPage(), 
+      // Si quieres que el banner "DEBUG" desaparezca:
+      debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
 
 /*
 No guarda datos, solo dice:
@@ -53,6 +82,7 @@ class _LoginPageState extends State<LoginPage> {
     setState(() {
       _isLoading = true;
     });
+    
 
     try {
       // A. AUTENTICACIÓN: Iniciar sesión con Firebase Auth

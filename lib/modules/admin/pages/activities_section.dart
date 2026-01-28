@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:tae_app/modules/admin/pages/branch_selection_tab.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:tae_app/modules/admin/pages/profile_screen.dart';
 import 'package:tae_app/modules/admin/pages/students_section.dart';
 import 'package:tae_app/modules/admin/pages/wallet_screen.dart';
 import 'package:tae_app/modules/admin/widgets/activities_card.dart';
-import 'package:tae_app/modules/admin/widgets/adaptive_branch_list.dart';
 import 'package:tae_app/modules/admin/widgets/custom_navigation_bar_admin.dart';
 import 'package:tae_app/modules/admin/widgets/notes_button.dart';
 import 'package:tae_app/modules/admin/widgets/search_bar.dart';
 
+// =========================================================
+// === ACTIVITIES SECTION (Contenedor Principal de Tabs) ===
+// =========================================================
 class ActivitiesSection extends StatefulWidget {
-  // Esto se ocupa para saber que grupo fue seleccionado antes de llegar a la parte de actividades
-  final String? groupName; // Parámetro opcional
+  final String? groupName;
 
   const ActivitiesSection({super.key, this.groupName});
 
@@ -20,33 +21,30 @@ class ActivitiesSection extends StatefulWidget {
 }
 
 class _ActivitiesSectionState extends State<ActivitiesSection> {
-  // Propósito: Guarda el índice de la pantalla actualmente seleccionada
   int _selectedIndex = 0;
 
-  // Lista de pantallas que cambiarán
-  // Aquí defines las pantallas que se mostrarán para cada tab
   List<Widget> get _screens => [
-    //HomeScreen(),
     ActivitiesSectionScreen(
       groupName: widget.groupName,
-    ), //  Lo pasamos a la pantalla interna), // temporal, cambia según lo que queramos hacer para "recargar" la pagina
-    WalletScreen(),
-    ProfileScreen(fullName: 'Josepe', email: 'Josepe13186', phone: '34234234', role: 'Administrador', imageUrl: '',),
+    ),
+    const WalletScreen(),
+    ProfileScreen(
+      fullName: 'Josepe',
+      email: 'Josepe13186',
+      phone: '34234234',
+      role: 'Administrador',
+      imageUrl: '',
+    ),
   ];
 
-  // Método que se llama al tocar un ícono
-  // Actualiza el estado con el nuevo índice seleccionado
   void _onItemTapped(int index) {
-    // setState(): Notifica a Flutter que debe reconstruir la interfaz
     setState(() {
       _selectedIndex = index;
     });
   }
 
-  // ESTE NO SE MUEVE, ESTE YA AYUDA Y FUNCIONA COMO DEBE DE SER
   @override
   Widget build(BuildContext context) {
-    // Scaffold — La base visual de la pantalla
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -56,134 +54,268 @@ class _ActivitiesSectionState extends State<ActivitiesSection> {
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      // Muestra la pantalla correspondiente al índice seleccionado
-      // body: Muestra la pantalla actual según _selectedIndex
       body: _screens[_selectedIndex],
-      // Bottom navigation bar
-      // Es la barra que aparece en la parte inferior de la pantalla.
-      //Permite que el usuario navegue entre diferentes secciones de la app (por ejemplo: inicio, cartera, perfil).
       bottomNavigationBar: CustomNavigationBarAdmin(
-        //(qué pantalla está activa).
         currentIndex: _selectedIndex,
-        // (qué hacer cuando el usuario cambia de pestaña).
         onTap: _onItemTapped,
       ),
+      // ✅ DISEÑO RESTAURADO: Se agrega el FloatingActionButton
+      floatingActionButton: const NotesButton(),
     );
   }
 }
 
+// ====================================================================
+// === ACTIVITIES SECTION SCREEN (Lógica de Datos y UI) =============
+// ====================================================================
+
 class ActivitiesSectionScreen extends StatefulWidget {
   final String? groupName;
 
-
-  
-
-  ActivitiesSectionScreen({super.key, this.groupName});
+  const ActivitiesSectionScreen({super.key, this.groupName});
 
   @override
-  State<ActivitiesSectionScreen> createState() =>
-      _ActivitiesSectionScreenState();
+  State<ActivitiesSectionScreen> createState() => _ActivitiesSectionScreenState();
 }
 
 class _ActivitiesSectionScreenState extends State<ActivitiesSectionScreen> {
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  String _searchQuery = ''; 
 
+  // ----------------------------------------------------
+  // LÓGICA DE AGREGAR/GUARDAR (Persistente) - MANTENIDA
+  // ----------------------------------------------------
+  void _addActivityToBelt(String beltName, String activityName, List<String> exercises) async {
+    final String? groupId = widget.groupName;
+    if (groupId == null || groupId.isEmpty) return;
 
+    try {
+      final activityData = {
+        'nombre_actividad': activityName,
+        'ejercicios': exercises,
+        'cinta_seccion': beltName,
+        'fecha_creacion': FieldValue.serverTimestamp(),
+      };
+
+      await _db
+          .collection('grupos').doc(groupId)
+          .collection('actividades').add(activityData);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Actividad "$activityName" guardada con éxito.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error al guardar actividad. Revise permisos.')),
+        );
+      }
+    }
+  }
+
+  void _addBeltSection(String newBeltName) async {
+    final String? groupId = widget.groupName;
+    if (groupId == null || groupId.isEmpty) return;
+
+    try {
+      final sectionData = {
+        'nombre_cinta': newBeltName,
+        'fecha_creacion': FieldValue.serverTimestamp(),
+      };
+
+      await _db
+          .collection('grupos').doc(groupId)
+          .collection('secciones_cinta').doc(newBeltName).set(sectionData);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Sección "$newBeltName" creada.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error al crear sección en Firebase.')),
+        );
+      }
+    }
+  }
+
+  // ----------------------------------------------------
+  // BORRAR/EDITAR ACTIVIDAD - MANTENIDA
+  // ----------------------------------------------------
+  void _deleteActivity(String activityId) async {
+    final String? groupId = widget.groupName;
+    if (groupId == null || groupId.isEmpty) return;
+
+    try {
+      await _db
+          .collection('grupos').doc(groupId)
+          .collection('actividades').doc(activityId).delete();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('🗑️ Actividad eliminada con éxito.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error al eliminar la actividad.')),
+        );
+      }
+    }
+  }
+
+  void _updateActivityName(String activityId, String newName) async {
+    final String? groupId = widget.groupName;
+    if (groupId == null || groupId.isEmpty) return;
+
+    try {
+      await _db
+          .collection('grupos').doc(groupId)
+          .collection('actividades').doc(activityId)
+          .update({'nombre_actividad': newName});
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('✅ Nombre de actividad actualizado en Firebase.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error al actualizar nombre.')),
+        );
+      }
+    }
+  }
+
+  // ----------------------------------------------------
+  // Lógica de Filtrado - MANTENIDA
+  // ----------------------------------------------------
+  Map<String, List<Map<String, dynamic>>> _filtrarActividades(
+  Map<String, List<Map<String, dynamic>>> allActivities,
+  String query,
+) {
+  // 1. Si la consulta está vacía, devuelve la lista completa.
+  if (query.isEmpty) {
+    return allActivities;
+  }
+
+  // 2. Convierte la consulta a minúsculas una sola vez.
+  final lowerCaseQuery = query.toLowerCase();
+  
+  final Map<String, List<Map<String, dynamic>>> filtered = {};
+
+  // 3. Iterar sobre las cintas (beltName) y sus listas de actividades.
+  allActivities.forEach((beltName, activities) {
+    final filteredActivities = activities.where((activity) {
+      
+      // Asegúrate de que estás leyendo la clave correcta, 
+      // probablemente 'name' o 'nombre_actividad'
+      final activityName = activity['name'] as String? ?? ''; 
+      
+      // 📌 CORRECCIÓN CLAVE: 
+      // Convierte el nombre de la actividad a minúsculas antes de buscar.
+      return activityName.toLowerCase().contains(lowerCaseQuery);
+    }).toList();
+
+    if (filteredActivities.isNotEmpty) {
+      filtered[beltName] = filteredActivities;
+    }
+  });
+
+  return filtered;
+}
+
+  // ----------------------------------------------------
+  // DIÁLOGO PARA AGREGAR ACTIVIDAD - DISEÑO RESTAURADO
+  // ----------------------------------------------------
   Future<void> _showAddActivityDialog(String beltName) async {
-  final activityNameController = TextEditingController();
-  List<String> exercises = [];
+    final activityNameController = TextEditingController();
+    List<String> exercises = [];
 
-  await showDialog(
+      await showDialog(
     context: context,
-    // StatefulBuilder => Te da un setState local, solo para el contenido que está dentro de él.
-    builder: (ctx) => StatefulBuilder( // ← ¡Envuelve el AlertDialog en StatefulBuilder! - // ← Paso 1: Envuelve para tener setState local
+    builder: (ctx) => StatefulBuilder(
       builder: (ctx, setState) => AlertDialog(
-        // CAMBIA EL COLOR DEL FONDO DE NUESTRA VENTANA EMERGENTE
-          backgroundColor: Colors.grey[50], // ← Fondo claro
-
+        // ✅ DISEÑO RESTAURADO
+        backgroundColor: Colors.grey[50], 
         title: Text('Agregar actividad a $beltName'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Campo para nombre de la actividad
+              // Campo: Nombre de la Actividad
               TextField(
-                controller: activityNameController,
+                controller: activityNameController, 
                 decoration: InputDecoration(
                   labelText: 'Nombre de la actividad',
-                  labelStyle: TextStyle(color: Colors.blueGrey), // Color de la etiqueta
-                  border: OutlineInputBorder(borderSide: BorderSide(color: Colors.blue.shade400)), // Color del borde normal
-                  focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.blue,width: 2)),// Color cuando está enfocado
-                ),
-                
+                  // ✅ DISEÑO RESTAURADO
+                  labelStyle: const TextStyle(color: Colors.blueGrey),
+                  border: OutlineInputBorder(borderSide: BorderSide(color: Colors.blue.shade400)),
+                  focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.blue, width: 2)),
+                )
               ),
               const SizedBox(height: 16),
 
-              // Lista de ejercicios actuales (se actualiza en tiempo real)
-              if (exercises.isNotEmpty)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Ejercicios:', style: TextStyle(fontWeight: FontWeight.bold)),
-                    ...exercises.map((exercise) => ListTile(
-                      title: Text(exercise),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () {
-                          setState(() { // ← Usa el setState de StatefulBuilder
-                            exercises.remove(exercise);
-                          });
-                        },
-                      ),
-                    )).toList(),
-                    const SizedBox(height: 16),
-                  ],
+              // Lista de ejercicios actuales
+              ...exercises.map((exercise) => ListTile(
+                title: Text(exercise),
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () {
+                    setState(() { exercises.remove(exercise); });
+                  },
                 ),
+              )).toList(),
 
-              // Botón para agregar ejercicio --> ES EL MODAL DENTRO DEL MODAL
+              // Botón para agregar ejercicio (abre un modal secundario)
               ElevatedButton.icon(
+                // ✅ DISEÑO RESTAURADO
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(160, 76, 175, 79), 
+                  foregroundColor: Colors.white, 
+                ),
                 onPressed: () async {
                   final exerciseController = TextEditingController();
-                  await showDialog(
-                    
+                  final result = await showDialog( // Modal secundario
                     context: ctx,
                     builder: (innerCtx) => AlertDialog(
-                      // CAMBIA EL COLOR DEL FONDO DE NUESTRA VENTANA EMERGENTE
-                    backgroundColor: Colors.grey[50], // ← Fondo claro
-                      
+                      // ✅ DISEÑO RESTAURADO
+                      backgroundColor: Colors.grey[50], 
                       title: const Text('Nuevo ejercicio'),
                       content: TextField(
-                        
-                        controller: exerciseController,
-                        decoration: const InputDecoration(
-                          hintText: 'Ej: Patada frontal',
-                         labelText: 'Tipo de ejercicio',
-                         labelStyle: TextStyle(color: Colors.blueGrey), // Color de la etiqueta
-                         //border: OutlineInputBorder(borderSide: BorderSide(color: Colors.blue.shade400)), // Color del borde normal
-                         focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.blue,width: 2)),// Color cuando está enfocado            
+                        controller: exerciseController, 
+                        decoration: InputDecoration(
+                           hintText: 'Ej: Patada frontal',
+                           labelText: 'Tipo de ejercicio',
+                           labelStyle: const TextStyle(color: Colors.blueGrey),
+                           focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.blue, width: 2)),
                         ),
                       ),
                       actions: [
                         TextButton(
-                          onPressed: () => Navigator.pop(innerCtx),
-                           style: TextButton.styleFrom(
-                           foregroundColor: const Color.fromARGB(255, 58, 57, 57), // COLOR DEL TEXTO
-                           ),
-                          child: const Text('Cancelar'),
+                          onPressed: () => Navigator.pop(innerCtx), 
+                          // ✅ DISEÑO RESTAURADO
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color.fromARGB(255, 58, 57, 57),
+                          ),
+                          child: const Text('Cancelar')
                         ),
-                        TextButton(
+                        ElevatedButton(
                           onPressed: () {
-                            if (exerciseController.text.trim().isNotEmpty) {
-                              setState(() { // ← ¡Actualiza la lista dentro del modal!
-                                exercises.add(exerciseController.text.trim());
-                              });
-                            }
-                            Navigator.pop(innerCtx);
+                            final name = exerciseController.text.trim();
+                            Navigator.pop(innerCtx, name);
                           },
-                          // Color del Botón de agregar --> NUEVA ACTIVIDAD
+                          // ✅ DISEÑO RESTAURADO
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue,
                             foregroundColor: Colors.white,
-                             shape: RoundedRectangleBorder(
+                            shape: RoundedRectangleBorder(
                              borderRadius: BorderRadius.circular(8),
                             ),
                           ),
@@ -192,12 +324,11 @@ class _ActivitiesSectionScreenState extends State<ActivitiesSectionScreen> {
                       ],
                     ),
                   );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(160, 76, 175, 79), // COLOR DEL FONDO
-                  foregroundColor: Colors.white, // COLOR DE LA LETRA 
                   
-                ),
+                  if (result != null && result.isNotEmpty) {
+                    setState(() { exercises.add(result); });
+                  }
+                },
                 icon: const Icon(Icons.add),
                 label: const Text('Agregar ejercicio'),
               ),
@@ -206,26 +337,22 @@ class _ActivitiesSectionScreenState extends State<ActivitiesSectionScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            // Estilo del botón Cancelar
+            onPressed: () => Navigator.pop(ctx), 
+            // ✅ DISEÑO RESTAURADO
             style: TextButton.styleFrom(
-              foregroundColor: Colors.grey[700], // COLOR DEL TEXTO
+             foregroundColor: Colors.grey[700],
             ),
-          
-            child: const Text('Cancelar',),
+            child: const Text('Cancelar')
           ),
           ElevatedButton(
             onPressed: () {
               if (activityNameController.text.trim().isNotEmpty && exercises.isNotEmpty) {
-                _addActivityToBelt(
-                  beltName,
-                  activityNameController.text.trim(),
-                  exercises,
-                );
+                // LLAMADA A LA FUNCIÓN DE GUARDADO PERSISTENTE EN FIREBASE - MANTENIDA
+                _addActivityToBelt(beltName, activityNameController.text.trim(), exercises);
               }
               Navigator.pop(ctx);
             },
-            // Estilos de los botón Guardar
+            // ✅ DISEÑO RESTAURADO
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue,
               foregroundColor: Colors.white,
@@ -239,339 +366,338 @@ class _ActivitiesSectionScreenState extends State<ActivitiesSectionScreen> {
       ),
     ),
   );
-}
-
-
-
-
-  //  Recibe el nombre
-  final List<Map<String, dynamic>> branches = [
-    {"name": "Centro Sur", "classes": 4, "participants": 70},
-    {"name": "Tlacote", "classes": 5, "participants": 150},
-    {"name": "Juriquilla", "classes": 3, "participants": 65},
-  ];
-
-  // ✅ Mapa: cada cinta tiene su propia lista de actividades
-  /*Map<Clave, Valor>
-│
-├── Clave: String → "Cintas Blancas", "Cintas Naranjas"... (el título de la sección)
-│
-└── Valor: List<Map<String, dynamic>> → Lista de actividades, donde cada actividad es un Map:
-     │
-     └── Map<String, dynamic> → {'name': 'Patadas', 'exercises': ['Front kick', ...]} */
-     
-  Map<String, List<Map<String, dynamic>>> _beltActivities = {
-    'Cintas Blancas': [
-      {
-        'name': 'Patadas',
-        'exercises': ['Front kick', 'Side kick'],
-      },
-      {
-        'name': 'Estiramientos',
-        'exercises': ['Piernas', 'Espalda'],
-      },
-    ],
-    'Cintas Naranjas': [
-      {
-        'name': 'Bloqueos',
-        'exercises': ['High block', 'Low block'],
-      },
-      {
-        'name': 'Equilibrio',
-        'exercises': ['Postura 1', 'Postura 2'],
-      },
-    ],
-    'Cintas Verdes': [
-      {
-        'name': 'Combos',
-        'exercises': ['Combo 1', 'Combo 2', 'Combo 3'],
-      },
-    ],
-    'Cintas Azules': [
-      {
-        'name': 'Defensa personal',
-        'exercises': ['Agarre 1', 'Agarre 2'],
-      },
-    ],
-  };
-
-  // ✅ Aquí va la lista de grupos (actividades)
-  /*
-  List<Map<String, dynamic>> _groups = [
-    {
-      'name': 'Patadas',
-      'exercises': ['Front kick', 'Roundhouse'],
-    },
-    {
-      'name': 'Bloqueos',
-      'exercises': ['High block', 'Low block'],
-    },
-  ];
-  */
-
-  // ✅ Método para agregar una NUEVA CINTA (no solo una actividad)
-  /*
-      setState() → Le dice a Flutter: “¡Reconstruye la pantalla, los datos cambiaron!”
-      _beltActivities[beltName] = [] → Crea una nueva entrada en el mapa. 
-      Si ya existía, la sobreescribe (por eso conviene validar antes).
-   */
-  void _addBeltSection(String beltName) {
-    setState(() {
-      _beltActivities[beltName] = []; // Empieza con 0 actividades
-    });
   }
 
-  // ✅ Método para agregar actividad ==> ESTO SE DEBE DE CAMBIAR CUANDO
-  /*
-  void _addActivity() {
-    setState(() {
-      _groups.add({
-        'name': 'Nueva Actividad',
-        'exercises': ['Ejercicio 1', 'Ejercicio 2'],
-      });
-    });
-  }
-  */
+  void _updateBeltSectionName(String oldName, String newName) async {
+  final String? groupId = widget.groupName;
+  if (groupId == null || groupId.isEmpty) return;
 
-/*
-¿Qué hace?
-Busca la cinta por beltName.
-Si existe (?.), le agrega un nuevo Map con name y exercises.
-setState() actualiza la UI.
- */
-  void _addActivityToBelt(String beltName, String activityName, List<String> exercises) {
-  setState(() {
-    _beltActivities[beltName]?.add({
-      'name': activityName,
-      'exercises': exercises,
+  try {
+    // 1. Obtener los datos de la sección antigua
+    final oldDoc = await _db
+        .collection('grupos')
+        .doc(groupId)
+        .collection('secciones_cinta')
+        .doc(oldName)
+        .get();
+
+    if (!oldDoc.exists) {
+      throw Exception('La sección no existe');
+    }
+
+    final data = oldDoc.data() ?? {};
+
+    // 2. Crear nuevo documento con el nuevo nombre
+    await _db
+        .collection('grupos')
+        .doc(groupId)
+        .collection('secciones_cinta')
+        .doc(newName)
+        .set({
+      ...data,
+      'nombre_cinta': newName,
     });
-  });
+
+    // 3. Actualizar todas las actividades que pertenecen a esta cinta
+    final activitiesSnapshot = await _db
+        .collection('grupos')
+        .doc(groupId)
+        .collection('actividades')
+        .where('cinta_seccion', isEqualTo: oldName)
+        .get();
+
+    // Actualizar cada actividad en un batch
+    final batch = _db.batch();
+    for (var doc in activitiesSnapshot.docs) {
+      batch.update(doc.reference, {'cinta_seccion': newName});
+    }
+    await batch.commit();
+
+    // 4. Eliminar el documento antiguo
+    await _db
+        .collection('grupos')
+        .doc(groupId)
+        .collection('secciones_cinta')
+        .doc(oldName)
+        .delete();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('✅ Sección renombrada de "$oldName" a "$newName"'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  } catch (e) {
+    print('Error al renombrar sección: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al renombrar la sección: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 }
 
-  // @override significa que estás reescribiendo un método que ya existe en la clase padre (StatelessWidget).
+  // ---------------------------------------------------------
+  // MÉTODOS DE BUILD Y VISUALIZACIÓN DINÁMICA - UI RESTAURADA
+  // ---------------------------------------------------------
   @override
   Widget build(BuildContext context) {
-    // Scaffold — La base visual de la pantalla
-    return Scaffold(
-      backgroundColor: Colors.white,
-      // body: lo que va dentro del cuerpo principal de la pantalla.
-      // SafeArea: evita que los elementos queden debajo del notch, barra de estado o botones del sistema.
-      /*
-        NOTA: El notch es la parte recortada de la pantalla en algunos 
-        celulares modernos (como iPhones o algunos Android) 
-        donde está la cámara frontal o sensores.
-      */
-      body: SafeArea(
-        // Padding — Espacio alrededor del contenido
-        // Padding es un widget que agrega espacio alrededor de su hijo (en este caso, una Column).
-        child: Padding(
-          // Aquí aplicamos 16 de margen horizontal (izquierda y derecha) y 10 vertical (arriba y abajo).
-          //   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: SingleChildScrollView(
-            // ← Agregamos esto para scroll vertical
+    final String? groupId = widget.groupName;
+    if (groupId == null || groupId.isEmpty) {
+        return const Center(child: Text("Error: El grupo no fue seleccionado correctamente."));
+    }
 
-            // Column — Apilar widgets verticalmente, apila widgets de arriba hacia abaj
-            child: Column(
-              // Alinea el contenido al inicio horizontal (izquierda).
-              crossAxisAlignment: CrossAxisAlignment.start,
-              // children (en plural) es una lista de
-              // widgets hijos que van uno debajo del otro en una Column.
-              // NOTA: No confundir con child (en singular), que solo permite un único widget hijo.
-              children: [
+    // El cuerpo del Scaffold tiene un fondo blanco (del código viejo)
+    return Container(
+      color: Colors.white,
+      child: SafeArea(
+        // 1. Escuchamos las SECCIONES DE CINTA que actúan como marcadores
+        child: StreamBuilder<QuerySnapshot>(
+          stream: _db.collection('grupos').doc(groupId).collection('secciones_cinta').snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            }
 
-                // Llamamos a la barra de busqueda que ya se separa en un widget a parte.
-                BarSearch(),
+            // 2. Obtenemos la lista de nombres de cintas
+            final List<String> beltNames = snapshot.data?.docs.map((doc) => doc.id).toList() ?? [];
 
-                // Crea un espacio vertical de 10 píxeles entre la caja de búsqueda y el siguiente elemento.
-                const SizedBox(height: 20),
-
-                // ==> ESTE YA NO SE MUEVE, ES LA PARTE DE ARRIBA DE LA PAGINA, VER ALUMNOS Y AGREGAR SECCIÓN.
-                // Agregar Sección
-                // Alinea su hijo al lado derecho (Alignment.centerRight).
-                Center(
-                  child: Row(
-                    //mainAxisAlignment: MainAxisAlignment.end, // los pone a la derecha
-                    mainAxisAlignment:
-                        MainAxisAlignment
-                            .spaceBetween, // Separa los 2 grupos a los extremos
-
-                    children: [
-                      // Primer botón: Ver alumnos
-                      InkWell(
-                        onTap: () {
-                          print("Ver alumnos clickeado");
-                          Navigator.push(
-                            context, 
-                            MaterialPageRoute(
-                              builder: (context) => StudentsSectionScreen(
-                                groupName: widget.groupName ?? 'Alumnos',
-                              ),
-                              ),
-                            );
+            // 3. El resto del contenido (Search Bar, Botones, y la lista de actividades)
+            return SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Barra de Búsqueda
+                    BarSearch(
+                        hintText: 'Buscar actividad o cinta',
+                        onSearch: (query) {
+                          setState(() { _searchQuery = query; });
                         },
-                        borderRadius: BorderRadius.circular(
-                          20,
-                        ), // efecto ripple redondeado
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 30,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: const Color.fromARGB(255, 176, 180, 184),
-                              width: 1,
-                            ),
-                            borderRadius: BorderRadius.circular(
-                              20,
-                            ), // borde circular
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Text(
-                                'Ver alumnos',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Botones "Ver alumnos" y "Agregar Sección"
+                    Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Botón: Ver alumnos
+                          InkWell(
+                            onTap: () {
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => StudentsSectionScreen(groupName: widget.groupName ?? 'Alumnos')));
+                            },
+                            // ✅ DISEÑO RESTAURADO: Usando Container con borde
+                            child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 30,
+                                  vertical: 6,
                                 ),
-                              ),
-                              SizedBox(width: 5),
-                              Icon(
-                                Icons.remove_red_eye,
-                                size: 18,
-                              ), // ícono distinto
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      //const SizedBox(width: 10), // separación entre los 2
-
-                      // Segundo botón: Agregar sección
-                      InkWell(
-                        onTap: () async {
-                          //_addActivity,
-                          //print("Agregar Sección clickeado");
-                          final controller = TextEditingController();
-                          
-                          await showDialog(
-                            context: context,
-                            builder:
-                                (ctx) => AlertDialog(
-                                  // Color de fondo para el modal de agregar sección
-                                  backgroundColor: Colors.white,
-                                  title: Text("Nueva sección de cinta"),
-                                  content: TextField(                                    
-                                    controller: controller,
-
-                                    decoration: InputDecoration(
-                                      hintText: "Ej: Cintas Moradas",
-                                      labelStyle: TextStyle(color: Colors.blueGrey),
-                                      border: OutlineInputBorder(borderSide: BorderSide(color: Colors.blue.shade400)), // Color del borde normal
-                                      focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.blue,width: 2)),// Color cuando está enfocado
-                                    ),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: const Color.fromARGB(255, 176, 180, 184),
+                                    width: 1,
                                   ),
-                                  actions: [
-                                    // CANCELAR -- AGREGAR SECCIÓN
-                                    TextButton(
-                                      style: ElevatedButton.styleFrom(
-                                        // backgroundColor: Colors.amberAccent,
-                                        foregroundColor: const Color.fromARGB(179, 41, 40, 40),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: const [
+                                    Text(
+                                      'Ver alumnos',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
                                       ),
-                                      onPressed: () => Navigator.pop(ctx),
-                                      child: Text("Cancelar"),
                                     ),
-                                    TextButton(
-                                      onPressed: () {
-                                        if (controller.text.trim().isNotEmpty) {
-                                          _addBeltSection(
-                                            controller.text.trim(),
-                                          );
-                                        }
-                                        Navigator.pop(ctx);
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blueAccent,
-                                        foregroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                         borderRadius: BorderRadius.circular(8),
-                                        ),
-                                      ),
-                                      child: Text("Crear"),
+                                    SizedBox(width: 5),
+                                    Icon(
+                                      Icons.remove_red_eye,
+                                      size: 18,
                                     ),
                                   ],
                                 ),
+                              ),
+                          ),
+
+                          // Botón: Agregar Sección
+                          InkWell(
+                            onTap: () async {
+                               final controller = TextEditingController();
+                               await showDialog(
+                                 context: context,
+                                 builder: (ctx) => AlertDialog(
+                                   // ✅ DISEÑO RESTAURADO
+                                   backgroundColor: Colors.white,
+                                   title: const Text("Nueva sección de cinta"),
+                                   content: TextField(
+                                     controller: controller, 
+                                     decoration: InputDecoration(
+                                       hintText: "Ej: Cintas Moradas",
+                                       // ✅ DISEÑO RESTAURADO
+                                       labelStyle: const TextStyle(color: Colors.blueGrey),
+                                       border: OutlineInputBorder(borderSide: BorderSide(color: Colors.blue.shade400)),
+                                       focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.blue,width: 2)),
+                                     )
+                                   ),
+                                   actions: [
+                                     TextButton(
+                                      onPressed: () => Navigator.pop(ctx),
+                                      // ✅ DISEÑO RESTAURADO
+                                      style: ElevatedButton.styleFrom(
+                                        foregroundColor: const Color.fromARGB(179, 41, 40, 40),
+                                      ),
+                                      child: const Text("Cancelar")
+                                    ),
+                                     TextButton(
+                                       onPressed: () {
+                                         if (controller.text.trim().isNotEmpty) {
+                                           _addBeltSection(controller.text.trim()); // GUARDAR EN FIREBASE - MANTENIDA
+                                         }
+                                         Navigator.pop(ctx);
+                                       },
+                                       // ✅ DISEÑO RESTAURADO
+                                       style: ElevatedButton.styleFrom(
+                                         backgroundColor: Colors.blueAccent,
+                                         foregroundColor: Colors.white,
+                                         shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                         ),
+                                       ),
+                                       child: const Text("Crear"),
+                                     ),
+                                   ],
+                                 ),
+                               );
+                            },
+                            // ✅ DISEÑO RESTAURADO: InkWell para el botón de Agregar Sección
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Text(
+                                    'Agregar Sección',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                      color: Color.fromARGB(255, 0, 0, 0),
+                                    ),
+                                  ),
+                                  SizedBox(width: 5),
+                                  Icon(
+                                    Icons.add_circle_outline,
+                                    color: Color.fromARGB(255, 0, 0, 0),
+                                    size: 18,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // 4. Listar las Tarjetas de Actividades (Stream Anidado) - MANTENIDO
+                    ...beltNames.map((beltName) {
+                      return StreamBuilder<QuerySnapshot>(
+                        stream: _db.collection('grupos').doc(groupId).collection('actividades')
+                            .where('cinta_seccion', isEqualTo: beltName)
+                            .snapshots(),
+                        
+                        builder: (context, activitySnapshot) {
+                          if (activitySnapshot.connectionState == ConnectionState.waiting) {
+                            return const LinearProgressIndicator();
+                          }
+                          
+                          final List<Map<String, dynamic>> activitiesList =
+                              activitySnapshot.data?.docs.map((doc) => {
+                                'id': doc.id,
+                                'name': doc['nombre_actividad'] ?? 'Actividad sin nombre',
+                                'exercises': doc['ejercicios'] ?? [],
+                              }).toList() ?? [];
+
+                              // ✅ FILTRAR las actividades según la búsqueda
+      final List<Map<String, dynamic>> filteredActivities = _searchQuery.isEmpty
+          ? activitiesList
+          : activitiesList.where((activity) {
+              final name = (activity['name'] as String).toLowerCase();
+              final exercises = activity['exercises'] as List<dynamic>? ?? [];
+              final exercisesMatch = exercises.any(
+                (e) => e.toString().toLowerCase().contains(_searchQuery.toLowerCase())
+              );
+              return name.contains(_searchQuery.toLowerCase()) || exercisesMatch;
+            }).toList();
+
+      // ✅ Si estamos buscando y no hay resultados, ocultar esta sección
+      if (_searchQuery.isNotEmpty && filteredActivities.isEmpty) {
+        return const SizedBox.shrink();
+      }
+
+      // ✅ También ocultar si no hay búsqueda y no hay actividades
+      if (activitiesList.isEmpty && _searchQuery.isEmpty) {
+        return ActivitiesCard(
+          group: [],
+          groupTitle: beltName,
+          groupId: groupId,
+          onAddActivity: () => _showAddActivityDialog(beltName),
+          onNameChanged: (activityId, newName) {
+            _updateActivityName(activityId, newName);
+          },
+          onDelete: (activityId) {
+            _deleteActivity(activityId);
+          },
+          onBeltNameChanged: (newName) {
+            _updateBeltSectionName(beltName, newName);
+          },
+        );
+      }
+
+                          return ActivitiesCard(
+                            group: filteredActivities,
+                            groupTitle: beltName,
+                            groupId: groupId,
+                            onAddActivity: () => _showAddActivityDialog(beltName),
+                            onNameChanged: (activityId, newName) {
+                              _updateActivityName(activityId, newName);
+                            },
+                            onDelete: (activityId) {
+                              _deleteActivity(activityId);
+                            },
+                            onBeltNameChanged: (newName) {
+                            _updateBeltSectionName(beltName, newName);
+                          },
                           );
                         },
-                        borderRadius: BorderRadius.circular(20),
-
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            //color: const Color.fromARGB(133, 219, 221, 221), // fondo de color
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Text(
-                                'Agregar Sección',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  color: Color.fromARGB(
-                                    255,
-                                    0,
-                                    0,
-                                    0,
-                                  ), // contraste con fondo verde
-                                ),
-                              ),
-                              SizedBox(width: 5),
-                              Icon(
-                                Icons.add_circle_outline,
-                                color: Color.fromARGB(255, 0, 0, 0),
-                                size: 18,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                      );
+                    }).toList(),
+                    
+                    if (beltNames.isEmpty)
+                      const Center(child: Text('¡Empieza agregando la primera sección de cinta!')),
+                  ],
                 ),
-
-                const SizedBox(height: 20),
-
-                // ES DONDE SE ARMAN LAS TARJETAS, ES UNA FUNCIÓN A PARTE EN ESTE MISMO ARCHIVO
-                // Por esto:
-                ..._beltActivities.entries
-                    .map(
-                      (entry) => ActivitiesCard(
-                       groups: entry.value,
-                       groupTitle: entry.key,
-                       onAddActivity: () => _showAddActivityDialog(entry.key), // ← Llama a una función nueva
-                      ),
-                    )
-                    .toList(),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
-
-      // Botón flotante
-      /*
-      Un botón flotante (Floating Action Button o FAB) es 
-      un botón circular y elevado que aparece sobre 
-      la interfaz, normalmente en la esquina inferior derecha.
-       */
-      floatingActionButton: NotesButton(),
     );
   }
 }

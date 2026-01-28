@@ -5,13 +5,23 @@ import 'package:video_player/video_player.dart';
 import 'package:flutter/foundation.dart'; // ← para usar kIsWeb
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+
+// ====================================================================
+// === ACTIVITY DETAIL SCREEN (CON LÓGICA FIREBASE) ===================
+// ====================================================================
 
 class ActivityDetailScreen extends StatefulWidget {
+  final String groupId; // Necesario para construir la ruta: grupos/{groupId}
+  final String activityId; // ID del documento a actualizar
   final String activityName;
   final List<String> exercises;
 
   const ActivityDetailScreen({
     Key? key,
+    required this.activityId, // Nuevo
+    required this.groupId, // Nuevo
     required this.activityName,
     required this.exercises,
   }) : super(key: key);
@@ -23,12 +33,134 @@ class ActivityDetailScreen extends StatefulWidget {
 class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
   late List<String> _exercises;
   final Map<int, List<Map<String, dynamic>>> _mediaPerExercise = {};
+  // Referencia a Firestore para facilitar las llamadas
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   @override
   void initState() {
     super.initState();
     _exercises = List<String>.from(widget.exercises);
   }
+
+  // ================================================================
+  // === MÉTODOS DE FIREBASE PARA CRUD EN ARRAYS ====================
+  // ================================================================
+  
+  // 📌 1. AÑADIR EJERCICIO (Array Union)
+  void _addExerciseToFirebase(String newExerciseName) async {
+    // 1. Añadir el ejercicio a Firestore usando arrayUnion
+    try {
+      await _db
+          .collection('grupos')
+          .doc(widget.groupId)
+          .collection('actividades')
+          .doc(widget.activityId)
+          .update({
+            'ejercicios': FieldValue.arrayUnion([newExerciseName]),
+          });
+      
+      // 2. Si la actualización en Firebase es exitosa, actualizamos el estado local
+      setState(() {
+        _exercises.add(newExerciseName);
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('✅ Ejercicio agregado con éxito.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error al guardar el ejercicio: $e')),
+        );
+      }
+    }
+  }
+  // 📌 2. ELIMINAR EJERCICIO (Array Remove)
+  void _deleteExerciseFromFirebase(int index) async {
+    final exerciseToRemove = _exercises[index];
+    
+    try {
+      // 1. Eliminar el ejercicio de Firestore usando arrayRemove
+      await _db
+          .collection('grupos')
+          .doc(widget.groupId)
+          .collection('actividades')
+          .doc(widget.activityId)
+          .update({
+            'ejercicios': FieldValue.arrayRemove([exerciseToRemove]),
+          });
+      
+      // 2. Si la actualización en Firebase es exitosa, eliminamos el estado local
+      setState(() {
+        _exercises.removeAt(index);
+        _mediaPerExercise.remove(index); // Eliminar media local asociada
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('🗑️ Ejercicio eliminado con éxito.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error al eliminar el ejercicio: $e')),
+        );
+      }
+    }
+  }
+
+  // 📌 3. EDITAR EJERCICIO (Requiere transacciones: Eliminar + Añadir)
+  void _editExerciseInFirebase(int index, String newName) async {
+    final oldName = _exercises[index];
+
+    if (oldName == newName) return; // No hacer nada si no hay cambio
+    
+    // Para editar un elemento en un array sin conocer su índice de antemano
+    // se debe hacer en dos pasos: 1. Remover el viejo. 2. Añadir el nuevo.
+    try {
+      // 1. Remover el nombre antiguo
+      await _db
+          .collection('grupos')
+          .doc(widget.groupId)
+          .collection('actividades')
+          .doc(widget.activityId)
+          .update({
+            'ejercicios': FieldValue.arrayRemove([oldName]),
+          });
+
+      // 2. Añadir el nuevo nombre
+      await _db
+          .collection('grupos')
+          .doc(widget.groupId)
+          .collection('actividades')
+          .doc(widget.activityId)
+          .update({
+            'ejercicios': FieldValue.arrayUnion([newName]),
+          });
+
+      // 3. Actualizar el estado local
+      setState(() {
+        _exercises[index] = newName;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('✅ Nombre del ejercicio actualizado.')),
+        );
+      }
+    } catch (e) {
+      // Si falla, revertimos o notificamos el error
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error al editar el ejercicio: $e')),
+        );
+      }
+    }
+  }
+
 
   //  Agregar ejercicio
   void _addExercise() async {
@@ -54,9 +186,9 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           ElevatedButton(
             onPressed: () {
               if (controller.text.trim().isNotEmpty) {
-                setState(() {
-                  _exercises.add(controller.text.trim());
-                });
+                  // LLAMADA A FIREBASE
+                _addExerciseToFirebase(controller.text.trim());
+                
               }
               Navigator.pop(ctx);
             },
@@ -99,9 +231,8 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           ElevatedButton(
             onPressed: () {
               if (controller.text.trim().isNotEmpty) {
-                setState(() {
-                  _exercises[index] = controller.text.trim();
-                });
+                // LLAMADA A FIREBASE
+                _editExerciseInFirebase(index, controller.text.trim());
               }
               Navigator.pop(ctx);
             },
@@ -130,14 +261,14 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancelar'),
+            // style: TextStyle(color: colors.white),
+            
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red,     foregroundColor: Colors.white),
             onPressed: () {
-              setState(() {
-                _exercises.removeAt(index);
-                _mediaPerExercise.remove(index);
-              });
+              // LLAMADA A FIREBASE
+              _deleteExerciseFromFirebase(index);
               Navigator.pop(ctx);
             },
             child: const Text('Eliminar'),

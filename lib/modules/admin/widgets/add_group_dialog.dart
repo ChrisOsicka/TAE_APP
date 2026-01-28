@@ -1,161 +1,142 @@
 import 'package:flutter/material.dart';
 
-
 class AddGroupDialog extends StatefulWidget {
-
-
-   final Function(Map<String,dynamic>)onSave;
+  final Function(Map<String, dynamic>) onSave;
 
   const AddGroupDialog({
     Key? key,
     required this.onSave,
-    }) : super(key:key);
+  }) : super(key: key);
 
   @override
   State<AddGroupDialog> createState() => _AddGroupDialogState();
 }
 
-
-
 class _AddGroupDialogState extends State<AddGroupDialog> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController beltTypeController = TextEditingController();
   final TextEditingController scheduleController = TextEditingController();
-  // 🔹 Simulamos el valor que luego vendrá de Firebase
-  // Por ahora lo dejamos fijo en 0 o lo puedes dejar vacío
 
-  // Controladores para capturar texto del formulario
-  int? availableAlumns; 
+  int? availableAlumns;
 
   @override
   Widget build(BuildContext context) {
-      return  AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text(
-          'Agregar un nuevo grupo',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Nombre de la sucursal
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nombre del Grupo de cintas',
-                  labelStyle: TextStyle(color: Colors.blueGrey),
-                  border: OutlineInputBorder(borderSide: BorderSide(color: Colors.blue)), // Color del borde normal
-                  focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.blue,width: 2)),// Color cuando está enfocado
-                                    
-                ),
+    return AlertDialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      title: const Text(
+        'Agregar un nuevo grupo',
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Nombre del grupo
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(
+                labelText: 'Nombre del Grupo de cintas',
+                labelStyle: TextStyle(color: Colors.blueGrey),
+                border: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.blue)),
+                focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.blue, width: 2)),
               ),
-              const SizedBox(height: 12),
-
-              // Listado de Cintas
-              TextField(
-                controller: beltTypeController,
-                decoration: const InputDecoration(
-                  labelText: 'Listado de cintas',
-                  labelStyle: TextStyle(color: Colors.blueGrey),
-                  border: OutlineInputBorder(borderSide: BorderSide(color: Colors.blue)), // Color del borde normal
-                  focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.blue,width: 2)),// Color cuando está enfocado
-                                    
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Horario
-              TextField(
-                controller: scheduleController,
-                decoration: const InputDecoration(
-                  labelText: 'Horario',
-                  labelStyle: TextStyle(color: Colors.blueGrey),
-                  border: OutlineInputBorder(borderSide: BorderSide(color: Colors.blue)), // Color del borde normal
-                  focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.blue,width: 2)),// Color cuando está enfocado
-                                    
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Participantes
-              TextField(
-                readOnly: true,
-                //controller: participantsController,
-                //keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Participantes',
-                  border: const OutlineInputBorder(),
-                  hintText: availableAlumns != null
-                      ? '$availableAlumns'
-                      : 'Por defecto tendra 0 Alumnos)',
-                ),
-              ),
-              const SizedBox(height: 12),
-
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(); // Cerrar sin hacer nada
-            },
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blueAccent,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              )
-              
-
             ),
-            onPressed: () {
-              // Capturamos los valores ingresados
-              String name = nameController.text.trim();
-              String schedule = scheduleController.text.trim();
-              String beltType = beltTypeController.text.trim();
+            const SizedBox(height: 12),
 
+            // Listado de Cintas
+            TextField(
+              controller: beltTypeController,
+              decoration: const InputDecoration(
+                labelText: 'Listado de cintas',
+                labelStyle: TextStyle(color: Colors.blueGrey),
+                border: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.blue)),
+                focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.blue, width: 2)),
+              ),
+            ),
+            const SizedBox(height: 12),
 
-              // 🔹 Validamos solo los campos necesarios
-              if (name.isEmpty || schedule.isEmpty ||beltType.isEmpty ) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Por favor llena el nombre, cintas y el horario '),
-                  ),
-                );
-                return;
-              }
+            // Horario
+            TextField(
+              controller: scheduleController,
+              decoration: const InputDecoration(
+                labelText: 'Horario',
+                labelStyle: TextStyle(color: Colors.blueGrey),
+                border: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.blue)),
+                focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.blue, width: 2)),
+              ),
+            ),
+            const SizedBox(height: 12),
 
-              // 🔹 Aquí simulamos el valor automático de clases desde Firebase
-              // (cuando integres Firebase, lo reemplazas con el valor real)
-              // int classes = await FirebaseService.getAvailableClasses(branchName);
-              int alumns = availableAlumns ?? 0;
+            // Participantes
+            TextField(
+              readOnly: true,
+              decoration: InputDecoration(
+                labelText: 'Participantes',
+                border: const OutlineInputBorder(),
+                hintText: availableAlumns != null
+                    ? '$availableAlumns'
+                    : 'Por defecto tendrá 0 alumnos',
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blueAccent,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          onPressed: () {
+            final name = nameController.text.trim();
+            final beltType = beltTypeController.text.trim();
+            final schedule = scheduleController.text.trim();
 
+            // Validación de campos
+            if (name.isEmpty || beltType.isEmpty || schedule.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                      'Por favor llena el nombre, cintas y el horario'),
+                ),
+              );
+              return;
+            }
 
-            // 🔹 Retornamos los datos al padre mediante el callback
-              widget.onSave({
+            final alumns = availableAlumns ?? 0;
+
+            // 🔹 En lugar de usar solo el callback, devolvemos los datos con Navigator.pop
+            final newGroupData = {
               "name": name,
               "beltType": beltType,
               "schedule": schedule,
               "alumns": alumns,
-            });
+            };
 
-              // 🔹 Mostrar en consola para verificar
-              print("Sucursal agregada: $name ($schedule clases)");
+            widget.onSave(newGroupData);
+            Navigator.of(context).pop(newGroupData); //  retorna al showDialog
 
-              Navigator.of(context).pop(); // Cerrar el diálogo
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
-      );
-    }
+            print("Sucursal agregada: $name ($schedule clases)");
+          },
+          child: const Text('Guardar'),
+        ),
+      ],
+    );
+  }
 }
-
